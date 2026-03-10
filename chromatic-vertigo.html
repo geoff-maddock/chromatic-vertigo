@@ -11,14 +11,32 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,var(--light),#f5f3ee);min-height:100vh;color:var(--dark);}
 .container{display:flex;min-height:100vh;padding:14px;gap:14px;}
-.sidebar{width:300px;flex-shrink:0;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);padding:16px;border-radius:12px;box-shadow:0 10px 30px rgba(20,20,19,.1);overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 28px);}
+.sidebar{width:300px;min-width:220px;max-width:640px;flex-shrink:0;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);padding:14px 14px 14px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(20,20,19,.1);overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 28px);position:relative;}
 .sidebar h1{font-family:'Lora',serif;font-size:19px;font-weight:500;margin-bottom:3px;}
 .subtitle{color:var(--mid);font-size:11px;margin-bottom:16px;line-height:1.5;}
-.sec{margin-bottom:18px;}
-.sec h3{font-size:11px;font-weight:600;margin-bottom:9px;letter-spacing:.6px;text-transform:uppercase;display:flex;align-items:center;gap:5px;}
+.sec{margin-bottom:10px;border:1px solid rgba(0,0,0,.08);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.8);box-shadow:0 1px 4px rgba(0,0,0,.04);}
+.sec h3{font-size:11px;font-weight:600;margin:0;padding:9px 10px 8px;letter-spacing:.6px;text-transform:uppercase;display:flex;align-items:center;gap:5px;border-bottom:1px solid rgba(0,0,0,.07);cursor:pointer;user-select:none;transition:background .15s;}
 .sec h3::before{content:'•';color:var(--orange);}
-.sec h3 .rnd-btn{margin-left:auto;background:none;border:none;cursor:pointer;font-size:13px;padding:0 2px;opacity:.6;transition:opacity .15s;}
+.sec h3:hover{background:rgba(217,119,87,.05);}
+.sec.collapsed h3{border-bottom:none;}
+.sec-spacer{flex:1;}
+.sec-badge{font-size:9px;font-weight:700;color:var(--orange);background:#fff4f0;border:1px solid rgba(217,119,87,.3);border-radius:10px;padding:1px 5px;line-height:1.4;}
+.sec-chevron{font-size:9px;color:var(--mid);transition:transform .2s;flex-shrink:0;line-height:1;}
+.sec.collapsed .sec-chevron{transform:rotate(-90deg);}
+.sec-body{padding:10px 10px 2px;}
+.sec.collapsed .sec-body{display:none;}
+.sec h3 .rnd-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:0 2px;opacity:.6;transition:opacity .15s;}
 .sec h3 .rnd-btn:hover{opacity:1;}
+/* sidebar drag/resize */
+.sidebar-drag{position:absolute;top:0;right:-5px;bottom:0;width:10px;cursor:col-resize;z-index:30;display:flex;align-items:center;justify-content:center;}
+.sidebar-drag-bar{width:3px;height:36px;background:var(--lgray);border-radius:2px;transition:background .15s,height .15s,opacity .2s;opacity:0;}
+.sidebar:hover .sidebar-drag-bar,.sidebar-drag.dragging .sidebar-drag-bar{opacity:1;}
+.sidebar-drag:hover .sidebar-drag-bar,.sidebar-drag.dragging .sidebar-drag-bar{background:var(--orange)!important;height:72px;}
+/* sidebar width preset chips */
+.sw-chips{display:flex;gap:4px;margin-top:4px;}
+.sw-chip{padding:3px 8px;border:1.5px solid var(--lgray);border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;background:white;color:var(--mid);transition:all .12s;user-select:none;}
+.sw-chip.active{border-color:var(--orange);background:#fff4f0;color:var(--orange);}
+.sw-chip:hover:not(.active){border-color:#c0beb5;color:var(--dark);}
 input[type=number].seed-in{width:100%;background:var(--light);padding:7px;border-radius:7px;font-family:'Courier New',monospace;font-size:13px;margin-bottom:7px;border:1px solid var(--lgray);text-align:center;color:var(--dark);}
 input[type=number].seed-in:focus{outline:none;border-color:var(--orange);background:white;}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px;}
@@ -296,6 +314,9 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--oran
   <!-- DISPLAY -->
   <div class="sec">
     <h3>Display</h3>
+    <div class="cg" id="swChipsCg">
+      <label>Panel Width</label>
+    </div>
     <div class="cg">
       <label>Aspect Lock <span style="font-weight:400;color:var(--mid)">(drag canvas corners)</span></label>
       <div class="size-chips" id="aspectChips">
@@ -2791,6 +2812,141 @@ document.addEventListener('keydown',function(e){
   document.addEventListener('touchstart', onDown, {passive:false});
   document.addEventListener('touchmove', onMoveThrottled, {passive:false});
   document.addEventListener('touchend', onUp);
-})();</script>
+})();
+
+// ═══════════════════════════════════════════════════════
+// UI ENHANCEMENTS — collapsible sections + resizable sidebar
+// ═══════════════════════════════════════════════════════
+
+// ── Collapsible sections ──
+(function initSectionCollapse(){
+  var LS='cv_sec_';
+  document.querySelectorAll('.sec').forEach(function(sec){
+    var h3=sec.querySelector(':scope>h3');
+    if(!h3)return;
+    // Stable key from plain-text title
+    var rawText=Array.from(h3.childNodes)
+      .filter(function(n){return n.nodeType===3;})
+      .map(function(n){return n.textContent;}).join('').trim()
+      .replace(/[^a-zA-Z0-9]/g,'_').substring(0,24);
+    var key=LS+rawText;
+
+    // Wrap all children after h3 in .sec-body
+    var body=document.createElement('div');
+    body.className='sec-body';
+    var children=Array.from(sec.children).slice(1);
+    children.forEach(function(c){body.appendChild(c);});
+    sec.appendChild(body);
+
+    // Flex spacer — pushes rnd-btn + chevron to right
+    var firstBtn=h3.querySelector('button');
+    var spacer=document.createElement('span');
+    spacer.className='sec-spacer';
+    if(firstBtn)h3.insertBefore(spacer,firstBtn);
+    else h3.appendChild(spacer);
+
+    // Active-modules badge only for the Modules layer section
+    if(sec.id==='layerModeSec'){
+      var badge=document.createElement('span');
+      badge.className='sec-badge';
+      badge.id='modActiveBadge';
+      if(firstBtn)h3.insertBefore(badge,firstBtn);
+      else h3.appendChild(badge);
+    }
+
+    // Collapse chevron
+    var chev=document.createElement('span');
+    chev.className='sec-chevron';
+    chev.textContent='▾';
+    h3.appendChild(chev);
+
+    // Restore persisted state
+    if(localStorage.getItem(key)==='1')sec.classList.add('collapsed');
+
+    // Click-to-collapse (ignore clicks on buttons)
+    h3.addEventListener('click',function(e){
+      if(e.target.matches('button')||e.target.closest('button'))return;
+      sec.classList.toggle('collapsed');
+      localStorage.setItem(key,sec.classList.contains('collapsed')?'1':'0');
+    });
+  });
+})();
+
+// Update the active-module badge count
+function updateModBadge(){
+  var badge=document.getElementById('modActiveBadge');
+  if(!badge||!params||!params.moduleList)return;
+  var on=params.moduleList.filter(function(m){return m.on;}).length;
+  badge.textContent=on+'/'+params.moduleList.length;
+}
+setInterval(updateModBadge,400);
+
+// ── Resizable sidebar ──
+(function initSidebarResize(){
+  var sidebar=document.querySelector('.sidebar');
+  if(!sidebar)return;
+  var LS_W='cv_sidebar_w',MIN=220,MAX=640;
+  var PRESETS=[{label:'Compact',w:240},{label:'Normal',w:300},{label:'Wide',w:420}];
+
+  // Restore saved width
+  var saved=parseInt(localStorage.getItem(LS_W));
+  if(saved&&saved>=MIN&&saved<=MAX)sidebar.style.width=saved+'px';
+
+  // Build preset chips
+  var chipsCg=document.getElementById('swChipsCg');
+  if(chipsCg){
+    var row=document.createElement('div');row.className='sw-chips';row.id='swChipsRow';
+    PRESETS.forEach(function(p){
+      var chip=document.createElement('span');chip.className='sw-chip';chip.textContent=p.label;
+      chip.onclick=(function(pw){return function(){
+        sidebar.style.width=pw+'px';
+        localStorage.setItem(LS_W,pw);
+        syncChips(pw);
+      };})(p.w);
+      row.appendChild(chip);
+    });
+    chipsCg.appendChild(row);
+    syncChips(sidebar.offsetWidth||300);
+  }
+
+  function syncChips(w){
+    document.querySelectorAll('.sw-chip').forEach(function(chip,i){
+      chip.classList.toggle('active',Math.abs(PRESETS[i].w-w)<20);
+    });
+  }
+
+  // Drag handle (created in JS so it's outside the sec-body wrapper)
+  var handle=document.createElement('div');
+  handle.className='sidebar-drag';
+  var bar=document.createElement('div');bar.className='sidebar-drag-bar';
+  handle.appendChild(bar);
+  sidebar.appendChild(handle);
+
+  var dragging=false,startX=0,startW=0;
+  handle.addEventListener('mousedown',function(e){
+    dragging=true;startX=e.clientX;startW=sidebar.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!dragging)return;
+    var nw=Math.max(MIN,Math.min(MAX,startW+(e.clientX-startX)));
+    sidebar.style.width=nw+'px';
+    syncChips(nw);
+  });
+  document.addEventListener('mouseup',function(){
+    if(!dragging)return;
+    dragging=false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+    var fw=sidebar.offsetWidth;
+    localStorage.setItem(LS_W,fw);
+    syncChips(fw);
+  });
+})();
+</script>
 </body>
 </html>
