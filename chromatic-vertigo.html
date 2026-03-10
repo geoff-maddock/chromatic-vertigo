@@ -222,6 +222,62 @@
       color: var(--dark);
     }
 
+    /* ── post fx panel ── */
+    .fx-toggle {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1.5px solid var(--lgray);
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      background: white;
+      color: var(--mid);
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+
+    .fx-toggle .fx-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--lgray);
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+
+    .fx-toggle.active {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: #f0f5ff;
+    }
+
+    .fx-toggle.active .fx-dot {
+      background: var(--blue);
+    }
+
+    .fx-toggle:hover:not(.active) {
+      border-color: #b0b8cc;
+      color: var(--dark);
+    }
+
+    .fx-panel {
+      background: #faf9f7;
+      border: 1px solid var(--lgray);
+      border-radius: 6px;
+      padding: 8px 10px 6px;
+      margin-bottom: 8px;
+    }
+
+    .fx-group {
+      margin-bottom: 6px;
+    }
+
     /* ── sound engine ── */
     .snd-enable-btn {
       width: 100%;
@@ -1720,6 +1776,149 @@
         <div class="hue-picker" id="globalHuePicker"></div>
       </div>
 
+      <!-- POST FX -->
+      <div class="sec">
+        <h3>Post FX</h3>
+
+        <!-- Echo -->
+        <div class="fx-group">
+          <button class="fx-toggle" id="fxEchoToggle" onclick="toggleFx('fxEcho')">
+            <span class="fx-dot"></span>Temporal Echo
+          </button>
+          <div class="fx-panel" id="fxEchoPanel" style="display:none">
+            <div class="cg"><label>Echo Count</label>
+              <div class="srow"><input type="range" id="fxEchoCount" min="1" max="8" step="1" value="4"
+                  oninput="fxp('fxEchoCount',+this.value)"><span class="val" id="fxEchoCount-v">4</span></div>
+            </div>
+            <div class="cg"><label>Decay</label>
+              <div class="srow"><input type="range" id="fxEchoDecay" min="0.1" max="0.97" step="0.01" value="0.7"
+                  oninput="fxp('fxEchoDecay',+this.value)"><span class="val" id="fxEchoDecay-v">0.70</span></div>
+            </div>
+            <div class="cg"><label>Scale per Step</label>
+              <div class="srow"><input type="range" id="fxEchoScale" min="0.92" max="1.08" step="0.002" value="0.98"
+                  oninput="fxp('fxEchoScale',+this.value)"><span class="val" id="fxEchoScale-v">0.98</span></div>
+            </div>
+            <div class="cg"><label>Rotation per Step</label>
+              <div class="srow"><input type="range" id="fxEchoRotate" min="-0.08" max="0.08" step="0.002" value="0.01"
+                  oninput="fxp('fxEchoRotate',+this.value)"><span class="val" id="fxEchoRotate-v">0.01</span></div>
+            </div>
+            <div class="cg"><label>Hue Drift per Step</label>
+              <div class="srow"><input type="range" id="fxEchoHueDrift" min="0" max="60" step="1" value="0"
+                  oninput="fxp('fxEchoHueDrift',+this.value)"><span class="val" id="fxEchoHueDrift-v">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feedback Tunnel -->
+        <div class="fx-group">
+          <button class="fx-toggle" id="fxFeedbackToggle" onclick="toggleFx('fxFeedback')">
+            <span class="fx-dot"></span>Feedback Tunnel
+          </button>
+          <div class="fx-panel" id="fxFeedbackPanel" style="display:none">
+            <div class="cg"><label>Feedback Amount</label>
+              <div class="srow"><input type="range" id="fxFeedbackAmount" min="0.5" max="0.97" step="0.01" value="0.85"
+                  oninput="fxp('fxFeedbackAmount',+this.value)"><span class="val" id="fxFeedbackAmount-v">0.85</span></div>
+            </div>
+            <div class="cg"><label>Zoom per Frame</label>
+              <div class="srow"><input type="range" id="fxFeedbackZoom" min="0.97" max="1.03" step="0.001" value="1.01"
+                  oninput="fxp('fxFeedbackZoom',+this.value)"><span class="val" id="fxFeedbackZoom-v">1.01</span></div>
+            </div>
+            <div class="cg"><label>Rotation per Frame</label>
+              <div class="srow"><input type="range" id="fxFeedbackRotate" min="-0.03" max="0.03" step="0.001" value="0.005"
+                  oninput="fxp('fxFeedbackRotate',+this.value)"><span class="val" id="fxFeedbackRotate-v">0.005</span></div>
+            </div>
+            <div class="cg"><label>Hue Drift per Frame</label>
+              <div class="srow"><input type="range" id="fxFeedbackHue" min="0" max="10" step="0.1" value="0"
+                  oninput="fxp('fxFeedbackHue',+this.value)"><span class="val" id="fxFeedbackHue-v">0.0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chromatic Aberration + Glitch -->
+        <div class="fx-group">
+          <button class="fx-toggle" id="fxAberrationToggle" onclick="toggleFx('fxAberration')">
+            <span class="fx-dot"></span>Chromatic Aberration
+          </button>
+          <div class="fx-panel" id="fxAberrationPanel" style="display:none">
+            <div class="cg"><label>Aberration Amount</label>
+              <div class="srow"><input type="range" id="fxAberrationAmount" min="1" max="40" step="0.5" value="10"
+                  oninput="fxp('fxAberrationAmount',+this.value)"><span class="val" id="fxAberrationAmount-v">10</span></div>
+            </div>
+            <div class="cg"><label>Angle (radians)</label>
+              <div class="srow"><input type="range" id="fxAberrationAngle" min="0" max="6.28" step="0.05" value="0"
+                  oninput="fxp('fxAberrationAngle',+this.value)"><span class="val" id="fxAberrationAngle-v">0.00</span></div>
+            </div>
+            <div class="cg"><label>Glitch Rate</label>
+              <div class="srow"><input type="range" id="fxGlitchRate" min="0" max="0.3" step="0.005" value="0.03"
+                  oninput="fxp('fxGlitchRate',+this.value)"><span class="val" id="fxGlitchRate-v">0.03</span></div>
+            </div>
+            <div class="cg"><label>Glitch Intensity</label>
+              <div class="srow"><input type="range" id="fxGlitchIntensity" min="0" max="1" step="0.01" value="0.5"
+                  oninput="fxp('fxGlitchIntensity',+this.value)"><span class="val" id="fxGlitchIntensity-v">0.50</span></div>
+            </div>
+            <div class="cg"><label>Glitch Slice Height</label>
+              <div class="srow"><input type="range" id="fxGlitchHeight" min="0.005" max="0.2" step="0.005" value="0.08"
+                  oninput="fxp('fxGlitchHeight',+this.value)"><span class="val" id="fxGlitchHeight-v">0.08</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mirror / Kaleidoscope -->
+        <div class="fx-group">
+          <button class="fx-toggle" id="fxMirrorToggle" onclick="toggleFx('fxMirror')">
+            <span class="fx-dot"></span>Mirror / Kaleidoscope
+          </button>
+          <div class="fx-panel" id="fxMirrorPanel" style="display:none">
+            <div class="cg"><label>Segments</label>
+              <div class="srow"><input type="range" id="fxMirrorSegments" min="2" max="16" step="1" value="6"
+                  oninput="fxp('fxMirrorSegments',+this.value)"><span class="val" id="fxMirrorSegments-v">6</span></div>
+            </div>
+            <div class="cg"><label>Rotation Offset</label>
+              <div class="srow"><input type="range" id="fxMirrorAngle" min="0" max="6.28" step="0.01" value="0"
+                  oninput="fxp('fxMirrorAngle',+this.value)"><span class="val" id="fxMirrorAngle-v">0.00</span></div>
+            </div>
+            <div class="cg"><label>Source Zoom</label>
+              <div class="srow"><input type="range" id="fxMirrorZoom" min="0.5" max="2" step="0.01" value="1"
+                  oninput="fxp('fxMirrorZoom',+this.value)"><span class="val" id="fxMirrorZoom-v">1.00</span></div>
+            </div>
+            <div class="cg"><label>Blend w/ Original</label>
+              <div class="srow"><input type="range" id="fxMirrorBlend" min="0" max="1" step="0.01" value="1"
+                  oninput="fxp('fxMirrorBlend',+this.value)"><span class="val" id="fxMirrorBlend-v">1.00</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Noise Warp Field -->
+        <div class="fx-group">
+          <button class="fx-toggle" id="fxWarpToggle" onclick="toggleFx('fxWarp')">
+            <span class="fx-dot"></span>Noise Warp Field
+          </button>
+          <div class="fx-panel" id="fxWarpPanel" style="display:none">
+            <div class="cg"><label>Warp Amount</label>
+              <div class="srow"><input type="range" id="fxWarpAmount" min="0" max="60" step="1" value="20"
+                  oninput="fxp('fxWarpAmount',+this.value)"><span class="val" id="fxWarpAmount-v">20</span></div>
+            </div>
+            <div class="cg"><label>Noise Scale</label>
+              <div class="srow"><input type="range" id="fxWarpScale" min="0.001" max="0.02" step="0.001" value="0.005"
+                  oninput="fxp('fxWarpScale',+this.value)"><span class="val" id="fxWarpScale-v">0.005</span></div>
+            </div>
+            <div class="cg"><label>Evolution Speed</label>
+              <div class="srow"><input type="range" id="fxWarpSpeed" min="0" max="4" step="0.1" value="1"
+                  oninput="fxp('fxWarpSpeed',+this.value)"><span class="val" id="fxWarpSpeed-v">1.0</span></div>
+            </div>
+            <div class="cg"><label>Twirl</label>
+              <div class="srow"><input type="range" id="fxWarpTwirl" min="0" max="2" step="0.05" value="0"
+                  oninput="fxp('fxWarpTwirl',+this.value)"><span class="val" id="fxWarpTwirl-v">0.00</span></div>
+            </div>
+            <div class="cg"><label>Audio Reactivity</label>
+              <div class="srow"><input type="range" id="fxWarpReact" min="0" max="2" step="0.05" value="0.5"
+                  oninput="fxp('fxWarpReact',+this.value)"><span class="val" id="fxWarpReact-v">0.50</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       <!-- MODULES (layer mode) -->
       <div class="sec" id="layerModeSec">
         <h3>Modules <button class="rnd-btn" onclick="randomizeAllMods()" title="Randomize all module params">🎲</button>
@@ -2179,7 +2378,8 @@
       crystalWeb: { on: false, blend: .85, faces: 20, spinX: .4, spinY: .7, spinZ: .3, perspective: 2.2, edgeGlow: .7, vertexGlow: .5, wireframe: true },
       bloomPetals: { on: false, blend: .8, petals: 7, layers: 3, petalLen: .8, petalWidth: .4, rotSpeed: .6, breathe: .5, innerRing: true },
       lightningArc: { on: false, blend: .9, arcs: 4, forkDepth: 5, spread: .6, restrikeBeat: true, glowWidth: 3, drift: .3 },
-      orbitWeb: { on: false, blend: .75, bodies: 5, trailLen: 120, gravity: .8, initVel: .6, connectLines: true, trailFade: .85 }
+      orbitWeb: { on: false, blend: .75, bodies: 5, trailLen: 120, gravity: .8, initVel: .6, connectLines: true, trailFade: .85 },
+      shapeMask: { on: true, blend: 1, count: 3, shapeType: 0, size: .28, variety: .3, scatter: .55, rotation: 0, polyFaces: 6, splatPoints: 7, splatiness: .45, feather: 0, invert: false, animate: false, animSpeed: 1 }
     };
 
     // Make a fresh instance object for a given type
@@ -2199,6 +2399,12 @@
 
     var params = {
       seed: 42, spinSpeed: .012, audioReact: 2, hueSpeed: 1, chaos: .2, persist: .3, brightness: 1, saturation: 1,
+      // ── Post FX ──
+      fxEchoOn: false, fxEchoCount: 4, fxEchoDecay: 0.7, fxEchoScale: 0.98, fxEchoRotate: 0.01, fxEchoHueDrift: 0,
+      fxFeedbackOn: false, fxFeedbackAmount: 0.85, fxFeedbackZoom: 1.01, fxFeedbackRotate: 0.005, fxFeedbackHue: 0,
+      fxAberrationOn: false, fxAberrationAmount: 10, fxAberrationAngle: 0, fxGlitchRate: 0.03, fxGlitchIntensity: 0.5, fxGlitchHeight: 0.08,
+      fxMirrorOn: false, fxMirrorSegments: 6, fxMirrorAngle: 0, fxMirrorBlend: 1.0, fxMirrorZoom: 1.0,
+      fxWarpOn: false, fxWarpAmount: 20, fxWarpScale: 0.005, fxWarpSpeed: 1.0, fxWarpTwirl: 0, fxWarpReact: 0.5,
       hueRange: { start: 0, end: 360 },
       // ordered list of module instances
       moduleList: [
@@ -2395,6 +2601,28 @@
           ['initVel', 'Init Velocity', 0.1, 2, .05, .6]
         ],
         toggles: [['connectLines', 'Connect Bodies', true], ['trailFade', 'Trail Fade', true]]
+      },
+      shapeMask: {
+        label: '⬟ Shape Masks',
+        params: [
+          ['count', 'Count', 1, 12, 1, 3],
+          ['size', 'Base Size', 0.04, 0.65, 0.01, 0.28],
+          ['variety', 'Size & Shape Variety', 0, 1, 0.01, 0.3],
+          ['scatter', 'Scatter / Spread', 0, 1, 0.01, 0.55],
+          ['rotation', 'Arrangement Angle', 0, 6.28, 0.05, 0],
+          ['polyFaces', 'Polygon Sides', 3, 12, 1, 6],
+          ['splatPoints', 'Splat Points', 3, 12, 1, 7],
+          ['splatiness', 'Splatiness', 0, 1, 0.01, 0.45],
+          ['feather', 'Edge Feather', 0, 1, 0.01, 0],
+          ['animSpeed', 'Anim Speed', 0.1, 5, 0.1, 1]
+        ],
+        selects: [
+          ['shapeType', 'Shape Type', ['Circle', 'Polygon', 'Splat'], 0]
+        ],
+        toggles: [
+          ['invert', 'Invert (show only inside)', false],
+          ['animate', 'Animate', false]
+        ]
       }
     };
 
@@ -2756,6 +2984,30 @@
     // Per-instance state: wheels[instanceId] = [...Pinwheel], ptcls[instanceId] = [...Particle]
     var wheelsMap = {}, ptclsMap = {};
 
+    // ── Post FX buffers ──
+    var _echoRing = [], _echoHead = 0;
+    var _feedbackBuf = null, _feedbackReady = false;
+    var _aberRed = null, _aberBlue = null;
+    var _fxScratch = null;
+
+    function initFxBuffers() {
+      var MAX_ECHO = 8;
+      for (var i = 0; i < MAX_ECHO; i++) {
+        if (_echoRing[i]) _echoRing[i].remove();
+        _echoRing[i] = createGraphics(width, height);
+      }
+      _echoHead = 0;
+      if (_feedbackBuf) _feedbackBuf.remove();
+      _feedbackBuf = createGraphics(width, height);
+      _feedbackReady = false;
+      if (_aberRed) _aberRed.remove();
+      _aberRed = createGraphics(width, height);
+      if (_aberBlue) _aberBlue.remove();
+      _aberBlue = createGraphics(width, height);
+      if (_fxScratch) _fxScratch.remove();
+      _fxScratch = createGraphics(width, height);
+    }
+
     // ═══════════════════════════════════════════════════════
     // PINWHEEL CLASS
     // ═══════════════════════════════════════════════════════
@@ -2871,6 +3123,7 @@
       colorMode(HSB, 360, 100, 100, 100);
       pg = createGraphics(sz, sz); pg.colorMode(HSB, 360, 100, 100, 100);
       var fftC = document.getElementById('fftCanvas'); if (fftC) { fftC.width = sz; fftCtx = null; }
+      initFxBuffers();
       buildModUI(); buildMappingLabels(); doInitSys();
       initSound(); buildGlobalSoundUI();
       var ghp = document.getElementById('globalHuePicker');
@@ -2909,6 +3162,227 @@
       });
     }
 
+    // ═══════════════════════════════════════════════════════
+    // POST-PROCESS FX
+    // ═══════════════════════════════════════════════════════
+
+    // ── Feedback Tunnel ──
+    // Called at the START of draw, before modules render.
+    // Injects the previous frame back into pg with zoom/rotate to create
+    // the infinite-tunnel video-feedback loop effect.
+    function applyFeedbackFX(bm) {
+      pg.colorMode(RGB);
+      pg.background(12, 12, 11);
+      if (!_feedbackReady) return;
+      var zoom = params.fxFeedbackZoom * (1 + bm * 0.02);
+      var ctx = pg.drawingContext;
+      ctx.save();
+      ctx.globalAlpha = params.fxFeedbackAmount;
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate(params.fxFeedbackRotate);
+      ctx.scale(zoom, zoom);
+      ctx.translate(-width / 2, -height / 2);
+      // Hue-drift: shift the hue of the feedback buffer each frame using a
+      // canvas hue-rotate filter so the tunnel slowly cycles through colours.
+      if (params.fxFeedbackHue > 0.05) {
+        ctx.filter = 'hue-rotate(' + (params.fxFeedbackHue * fc % 360) + 'deg)';
+      }
+      ctx.drawImage(_feedbackBuf.elt, 0, 0);
+      ctx.filter = 'none';
+      ctx.restore();
+    }
+
+    // ── Temporal Echo ──
+    // Called AFTER image(pg,0,0). Draws up to 8 ghost frames of the past
+    // render on top of the current scene, each shifted by scale/rotation.
+    function applyEchoFX() {
+      var count = Math.max(1, Math.min(8, Math.round(params.fxEchoCount)));
+      var cx = width / 2, cy = height / 2;
+      var ctx = drawingContext;
+      ctx.save();
+      for (var i = count; i >= 1; i--) {
+        var bufIdx = ((_echoHead - i) % count + count) % count;
+        if (!_echoRing[bufIdx]) continue;
+        var alpha = Math.pow(params.fxEchoDecay, i);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(cx, cy);
+        ctx.rotate(params.fxEchoRotate * i);
+        var s = Math.pow(params.fxEchoScale, i);
+        ctx.scale(s, s);
+        ctx.translate(-cx, -cy);
+        if (params.fxEchoHueDrift > 0.5) {
+          ctx.filter = 'hue-rotate(' + (params.fxEchoHueDrift * i) + 'deg)';
+        }
+        ctx.drawImage(_echoRing[bufIdx].elt, 0, 0);
+        ctx.filter = 'none';
+        ctx.restore();
+      }
+      ctx.restore();
+      // Capture the clean pg render (no echoes) for future echo frames.
+      var slot = _echoRing[_echoHead % count];
+      if (slot) slot.drawingContext.drawImage(pg.elt, 0, 0);
+      _echoHead = (_echoHead + 1) % count;
+    }
+
+    // ── Chromatic Aberration + Glitch ──
+    // Isolates the red and blue channels of pg into scratch buffers then
+    // screen-blends them back onto the canvas at opposite offsets.
+    // Periodic random horizontal slice displacement adds VHS glitch bursts.
+    function applyAberrationFX(bm) {
+      var amt = params.fxAberrationAmount * (1 + bm * 0.5);
+      var ang = params.fxAberrationAngle;
+      var dx = amt * Math.cos(ang);
+      var dy = amt * Math.sin(ang);
+
+      // Build red-channel copy of pg
+      var rCtx = _aberRed.drawingContext;
+      rCtx.clearRect(0, 0, width, height);
+      rCtx.drawImage(pg.elt, 0, 0);
+      rCtx.globalCompositeOperation = 'multiply';
+      rCtx.fillStyle = '#ff2020';
+      rCtx.fillRect(0, 0, width, height);
+      rCtx.globalCompositeOperation = 'source-over';
+
+      // Build blue-channel copy of pg
+      var bCtx = _aberBlue.drawingContext;
+      bCtx.clearRect(0, 0, width, height);
+      bCtx.drawImage(pg.elt, 0, 0);
+      bCtx.globalCompositeOperation = 'multiply';
+      bCtx.fillStyle = '#2020ff';
+      bCtx.fillRect(0, 0, width, height);
+      bCtx.globalCompositeOperation = 'source-over';
+
+      // Screen-blend shifted channels onto the main canvas
+      var ctx = drawingContext;
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.drawImage(_aberRed.elt, dx, dy);
+      ctx.drawImage(_aberBlue.elt, -dx, -dy);
+      ctx.restore();
+
+      // Glitch: random horizontal slice displacements
+      if (params.fxGlitchRate > 0 && Math.random() < params.fxGlitchRate) {
+        var numSlices = 1 + Math.floor(Math.random() * 3);
+        for (var s = 0; s < numSlices; s++) {
+          var sliceH = Math.max(2, Math.round(height * params.fxGlitchHeight * (0.4 + Math.random() * 0.8)));
+          var sy = Math.floor(Math.random() * (height - sliceH));
+          var ox = Math.round((Math.random() - 0.5) * 2 * width * params.fxGlitchIntensity * 0.2);
+          ctx.drawImage(ctx.canvas, 0, sy, width, sliceH, ox, sy, width, sliceH);
+        }
+      }
+    }
+
+    // ── Full-frame Mirror / Kaleidoscope ──
+    // Captures the current canvas state, clears it, then tiles N mirrored
+    // pie-sectors of the source around the canvas centre.
+    function applyMirrorFX() {
+      var N = Math.max(2, Math.min(16, Math.round(params.fxMirrorSegments)));
+      var segAngle = (Math.PI * 2) / N;
+      var angOff = params.fxMirrorAngle;
+      var zoom = params.fxMirrorZoom;
+      var blend = params.fxMirrorBlend;
+      var cx = width / 2, cy = height / 2;
+      var r = Math.sqrt(cx * cx + cy * cy) * 2.2;
+
+      var ctx = drawingContext;
+      // Snapshot current canvas into scratch buffer
+      _fxScratch.drawingContext.drawImage(ctx.canvas, 0, 0);
+
+      ctx.fillStyle = 'rgb(12,12,11)';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      for (var i = 0; i < N; i++) {
+        ctx.save();
+        ctx.rotate(i * segAngle + angOff);
+
+        // Clip to pie sector
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r, 0, segAngle);
+        ctx.closePath();
+        ctx.clip();
+
+        // Alternate sectors are mirrored (reflected across their bisector)
+        if (i % 2 === 1) {
+          ctx.rotate(segAngle / 2);
+          ctx.scale(-1, 1);
+          ctx.rotate(-segAngle / 2);
+        }
+
+        if (zoom !== 1) ctx.scale(zoom, zoom);
+        ctx.drawImage(_fxScratch.elt, -cx, -cy);
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // Crossfade with original if blend < 1
+      if (blend < 0.99) {
+        ctx.save();
+        ctx.globalAlpha = 1 - blend;
+        ctx.drawImage(_fxScratch.elt, 0, 0);
+        ctx.restore();
+      }
+    }
+
+    // ── Noise Warp Field ──
+    // Splits the canvas into horizontal strips and displaces each strip by a
+    // time-evolving 2-D noise field, making the whole scene melt and flow.
+    // A twirl parameter adds a rotational curl to the displacement.
+    function applyWarpFX(am) {
+      var wAmt = params.fxWarpAmount * (1 + am * params.fxWarpReact);
+      if (wAmt < 0.5) return;
+      var STRIPS = 56;
+      var stripH = height / STRIPS;
+      var t = fc * params.fxWarpSpeed * 0.01;
+      var sc = params.fxWarpScale * 800; // scale noise coords to meaningful range
+      var twirl = params.fxWarpTwirl;
+      var cx = width / 2, cy = height / 2;
+      var ctx = drawingContext;
+
+      // Snapshot current canvas (receives the result of all prior FX)
+      _fxScratch.drawingContext.drawImage(ctx.canvas, 0, 0);
+      ctx.fillStyle = 'rgb(12,12,11)';
+      ctx.fillRect(0, 0, width, height);
+
+      for (var i = 0; i < STRIPS; i++) {
+        var yNorm = i / STRIPS;
+        var sy = Math.round(i * stripH);
+        var sh = Math.round(stripH) + 1;
+
+        // Pair of independent noise calls for X and Y displacement
+        var nx = noise(sc + t, yNorm * 6) - 0.5;
+        var ny = noise(yNorm * 6 + t, sc * 1.3) - 0.5;
+        var ddx = nx * wAmt * 2;
+        var ddy = ny * wAmt * 0.4;
+
+        // Twirl: add a sine-modulated rotational component
+        if (twirl > 0.01) {
+          var dist = (sy - cy) / cy; // -1 to 1
+          ddx += Math.sin(dist * Math.PI * twirl * 1.5) * wAmt * twirl * 0.5;
+          ddy += Math.cos(dist * Math.PI * twirl) * wAmt * twirl * 0.15;
+        }
+
+        ctx.drawImage(
+          _fxScratch.elt,
+          0, sy, width, sh,
+          Math.round(ddx), Math.round(sy + ddy), width, sh
+        );
+      }
+    }
+
+    // ── FX pipeline dispatcher ──
+    // Applied after image(pg,0,0) in both layer and chain render modes.
+    function applyPostFX(am, bm) {
+      if (params.fxEchoOn) applyEchoFX();
+      if (params.fxAberrationOn) applyAberrationFX(bm);
+      if (params.fxMirrorOn) applyMirrorFX();
+      if (params.fxWarpOn) applyWarpFX(am);
+    }
+
     function draw() {
       getAudio();
       var am = av(), bm = abass(), mm = amid(), hm = ahi();
@@ -2921,16 +3395,23 @@
         pg.colorMode(RGB);
         for (var rv = width * .49; rv > width * .3; rv -= 5) { pg.stroke(10, 10, 9, map(rv, width * .3, width * .49, 130, 0)); pg.noFill(); pg.ellipse(width / 2, height / 2, rv * 2, rv * 2); }
         image(pg, 0, 0);
+        applyPostFX(am, bm);
         return;
       }
 
+      // ── Background / Persistence / Feedback ──
       pg.colorMode(RGB);
-      if (params.persist > .01) { pg.fill(12, 12, 11, 255 * (1 - params.persist)); pg.noStroke(); pg.rect(0, 0, width, height); }
-      else pg.background(12, 12, 11);
+      if (params.fxFeedbackOn) {
+        applyFeedbackFX(bm); // clears pg then injects previous frame
+      } else if (params.persist > .01) {
+        pg.fill(12, 12, 11, 255 * (1 - params.persist)); pg.noStroke(); pg.rect(0, 0, width, height);
+      } else {
+        pg.background(12, 12, 11);
+      }
       pg.colorMode(HSB, 360, 100, 100, 100);
 
       // Draw order based on type priority, preserving duplicates
-      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm'];
+      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm', 'shapeMask'];
       drawOrder.forEach(function (type) {
         params.moduleList.forEach(function (m) {
           if (m.type !== type || !m.on) return;
@@ -2940,10 +3421,20 @@
       // Tick sound engine each frame
       if (soundEnabled) tickSoundEngine();
 
+      // Capture pg into feedback buffer BEFORE vignette so the vignette
+      // doesn't accumulate with each feedback iteration.
+      if (params.fxFeedbackOn) {
+        _feedbackBuf.drawingContext.drawImage(pg.elt, 0, 0);
+        _feedbackReady = true;
+      }
+
       // Vignette
       pg.colorMode(RGB);
       for (var rv = width * .49; rv > width * .3; rv -= 5) { pg.stroke(10, 10, 9, map(rv, width * .3, width * .49, 130, 0)); pg.noFill(); pg.ellipse(width / 2, height / 2, rv * 2, rv * 2); }
       image(pg, 0, 0);
+
+      // Post-process FX pipeline (echo → aberration → mirror → warp)
+      applyPostFX(am, bm);
     }
 
     // ═══════════════════════════════════════════════════════
@@ -2983,6 +3474,7 @@
         case 'bloomPetals': drawBloomPetals(g, am, bm, b); break;
         case 'lightningArc': drawLightningArc(g, am, bm, b); break;
         case 'orbitWeb': drawOrbitWeb(g, am, bm, b); break;
+        case 'shapeMask': drawShapeMask(g, am, bm, b); break;
       }
       _activeModInst = null;
     }
@@ -3615,6 +4107,143 @@
       }
     }
 
+    // ── Shape Masks ──
+    // Draws filled shapes directly onto the graphics buffer using the raw
+    // Canvas 2D API so we can use even-odd fill for the invert mode and
+    // CSS blur filter for soft-edged feathering.
+    //
+    // Normal mode: shapes are filled with the background colour, masking
+    //   (cutting out) the module content that was drawn beneath them.
+    // Invert mode: a full-canvas rect is drawn first; shapes become holes in
+    //   it via the even-odd fill rule so only content inside shapes shows.
+    function drawShapeMask(g, am, bm, b) {
+      var mp = CMP('shapeMask');
+      if (!_activeModInst) return;
+
+      var cx = width / 2, cy = height / 2;
+      var count = Math.max(1, Math.round(mp.count));
+      var shapeType = mp.shapeType; // 0=circle 1=polygon 2=splat
+      var polyFaces = Math.max(3, Math.round(mp.polyFaces));
+      var splatPts = Math.max(3, Math.round(mp.splatPoints));
+      var splatiness = mp.splatiness;
+      var baseSize = mp.size;
+      var variety = mp.variety;
+      var scatter = mp.scatter;
+      var rotation = mp.rotation;
+      var feather = mp.feather;
+      var doAnimate = mp.animate;
+      var animSpeed = mp.animSpeed;
+      var invert = mp.invert;
+
+      // Bass drives a subtle size pulse
+      var audioBoost = AR('bass') * params.audioReact * 0.18;
+
+      var ctx = g.drawingContext;
+      ctx.save();
+
+      // Soft edges via CSS blur filter applied to the shapes
+      if (feather > 0.005) {
+        ctx.filter = 'blur(' + (feather * 22 * (width / 600)).toFixed(1) + 'px)';
+      }
+
+      ctx.beginPath();
+
+      // Invert: outer rect that shapes will punch holes in (even-odd rule)
+      if (invert) {
+        ctx.rect(0, 0, width, height);
+      }
+
+      for (var i = 0; i < count; i++) {
+        // ── Position ──────────────────────────────────────────
+        // Arrange shapes in a ring; scatter controls the ring radius.
+        // A single shape is always centred.
+        var posAngle = count > 1 ? (i / count) * Math.PI * 2 + rotation : 0;
+        var posRadius = count <= 1 ? 0 : width * 0.37 * scatter;
+        var px = cx + Math.cos(posAngle) * posRadius;
+        var py = cy + Math.sin(posAngle) * posRadius;
+
+        // Variety also jitters positions for an organic layout
+        if (variety > 0.01 && count > 1) {
+          px += (noise(i * 7.3 + 100) - 0.5) * width * 0.16 * variety * scatter;
+          py += (noise(i * 13.7 + 200) - 0.5) * height * 0.16 * variety * scatter;
+        }
+
+        // Animation: gentle orbiting drift
+        if (doAnimate) {
+          var t = fc * animSpeed * 0.012;
+          px += Math.sin(t + i * 1.57) * width * 0.05;
+          py += Math.cos(t * 0.8 + i * 2.3) * height * 0.05;
+        }
+
+        // ── Size ──────────────────────────────────────────────
+        // At variety=0 all shapes are the same size; at variety=1
+        // the noise field produces a 3× range of sizes.
+        var szFactor = variety > 0.01
+          ? Math.max(0.08, (noise(i * 5.1 + 300) * 2.0) * variety + (1.0 - variety))
+          : 1.0;
+        var r = width * baseSize * 0.5 * szFactor * (1 + audioBoost);
+
+        // ── Per-shape rotation ─────────────────────────────────
+        // Variety staggers shapes; animation counter-rotates alternates.
+        var rot = rotation
+          + i * (Math.PI / Math.max(count, 1)) * variety
+          + (doAnimate ? fc * animSpeed * 0.01 * (i % 2 === 0 ? 1 : -1) : 0);
+
+        // ── Shape paths ───────────────────────────────────────
+        if (shapeType === 0) {
+          // Circle
+          ctx.moveTo(px + r, py);
+          ctx.arc(px, py, r, 0, Math.PI * 2);
+
+        } else if (shapeType === 1) {
+          // Regular polygon — number of sides controlled by polyFaces
+          ctx.moveTo(px + Math.cos(rot) * r, py + Math.sin(rot) * r);
+          for (var v = 1; v <= polyFaces; v++) {
+            var a = rot + v * Math.PI * 2 / polyFaces;
+            ctx.lineTo(px + Math.cos(a) * r, py + Math.sin(a) * r);
+          }
+          ctx.closePath();
+
+        } else {
+          // Splat — noise-warped organic blob drawn as smooth quadratic
+          // bezier curves through noise-positioned control points.
+          var tAnim = doAnimate ? fc * animSpeed * 0.008 : 0;
+          // Build control-point array
+          var blobPts = [];
+          for (var v = 0; v < splatPts; v++) {
+            var a = rot + v * Math.PI * 2 / splatPts;
+            var ca = Math.cos(a - rot), sa = Math.sin(a - rot);
+            var nr = noise(ca * splatiness * 2.5 + i * 3.3,
+                           sa * splatiness * 2.5 + i * 7.1, tAnim);
+            var rad = r * (0.4 + nr * 1.25);
+            blobPts.push({ x: px + Math.cos(a) * rad, y: py + Math.sin(a) * rad });
+          }
+          // Smooth Catmull-Rom style: draw midpoint-to-midpoint beziers
+          var n = blobPts.length;
+          var mid0x = (blobPts[n - 1].x + blobPts[0].x) / 2;
+          var mid0y = (blobPts[n - 1].y + blobPts[0].y) / 2;
+          ctx.moveTo(mid0x, mid0y);
+          for (var v = 0; v < n; v++) {
+            var p0 = blobPts[v];
+            var p1 = blobPts[(v + 1) % n];
+            ctx.quadraticCurveTo(p0.x, p0.y, (p0.x + p1.x) / 2, (p0.y + p1.y) / 2);
+          }
+          ctx.closePath();
+        }
+      }
+
+      // Fill with background colour; invert uses even-odd so shapes are holes
+      ctx.fillStyle = 'rgb(12,12,11)';
+      if (invert) {
+        ctx.fill('evenodd');
+      } else {
+        ctx.fill();
+      }
+
+      ctx.filter = 'none';
+      ctx.restore();
+    }
+
     // ═══════════════════════════════════════════════════════
     // UI HANDLERS
     // ═══════════════════════════════════════════════════════
@@ -3622,6 +4251,22 @@
       params[name] = value;
       var el = document.getElementById(name + '-v');
       if (el) el.textContent = fmtV(value);
+    }
+
+    // ── Post FX helpers ──
+    function fxp(k, v) {
+      params[k] = v;
+      var el = document.getElementById(k + '-v');
+      if (el) el.textContent = fmtV(v);
+    }
+
+    function toggleFx(key) {
+      var onKey = key + 'On';
+      params[onKey] = !params[onKey];
+      var btn = document.getElementById(key + 'Toggle');
+      var panel = document.getElementById(key + 'Panel');
+      if (btn) btn.classList.toggle('active', params[onKey]);
+      if (panel) panel.style.display = params[onKey] ? 'block' : 'none';
     }
     function doUpdateSeedDisp() { document.getElementById('seedIn').value = params.seed; }
     function doUpdateSeed() { var v = parseInt(document.getElementById('seedIn').value); if (v > 0) { params.seed = v; doInitSys(); } else doUpdateSeedDisp(); }
@@ -3685,7 +4330,7 @@
       { src: 'fractureWeb', dst: 'kaleidoscope', style: 'kaleid', strength: 0.7 }
     ];
 
-    var MOD_KEYS = ['pinwheels', 'fractureWeb', 'lissajous', 'spirograph', 'particleStorm', 'kaleidoscope', 'moireGrid', 'pulseRings', 'chaosTunnel', 'noiseField'];
+    var MOD_KEYS = ['pinwheels', 'fractureWeb', 'lissajous', 'spirograph', 'particleStorm', 'kaleidoscope', 'moireGrid', 'pulseRings', 'chaosTunnel', 'noiseField', 'shapeMask'];
 
     // Off-screen buffers for chain rendering: one per module
     var chainBuffers = {}; // key -> p5.Graphics
@@ -3873,7 +4518,7 @@
       else pg.background(12, 12, 11);
       pg.colorMode(HSB, 360, 100, 100, 100);
 
-      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm'];
+      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm', 'shapeMask'];
       drawOrder.forEach(function (type) {
         params.moduleList.forEach(function (m) {
           if (m.type !== type || !m.on) return;
@@ -4140,6 +4785,7 @@
       pg = createGraphics(w, h);
       pg.colorMode(HSB, 360, 100, 100, 100);
       chainBuffers = {};
+      initFxBuffers();
       var fftC = document.getElementById('fftCanvas');
       if (fftC) { fftC.width = w; fftCtx = null; }
       doInitSys();
