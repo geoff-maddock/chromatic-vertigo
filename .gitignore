@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code
+.vscode/
+
+# Exported preset files (optional — remove this line if you want to commit presets)
+data/*.json
+
+# Local notes / scratch files
+*.local.*
+notes.md
+scratch/
