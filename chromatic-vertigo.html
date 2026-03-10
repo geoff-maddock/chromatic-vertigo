@@ -4686,8 +4686,7 @@
       // When mic is on use real levels; when off, return a normalized 0-1 sine
       // so sound bindings have a meaningful value to map to notes.
       if (!micOn) {
-        var t = (typeof frameCount !== 'undefined' ? frameCount : 0);
-        return 0.3 + 0.7 * Math.abs(Math.sin(t * 0.018 + (m.id ? m.id.length * 0.4 : 0)));
+        return 0.3 + 0.7 * Math.abs(Math.sin(fc * 0.018 + (m.id ? m.id.length * 0.4 : 0)));
       }
       var a = AR('vol');
       if (m.type === 'pinwheels' && sBass) a = AR('bass') * 1.2;
@@ -4730,8 +4729,6 @@
         if (isBeat) _sndSynthBeatCount = synthBeat;
       }
 
-      var frame = typeof fc !== 'undefined' ? fc : 0;
-
       params.moduleList.forEach(function (m) {
         if (!m.on || !m.sound || !m.sound.enabled) return;
         var s = getOrCreateModSynth(m);
@@ -4740,10 +4737,13 @@
         var spec = MOD_SPECS[m.type];
         if (!spec) return;
 
+        // Cache activity level once per module per frame (used by beat + melodic paths).
+        var act = isBeat ? moduleActivityLevel(m) : 0;
+
         // ── Beat-triggered bindings ──
         if (isBeat && snd.bindings.__beat__ === 'rhythmic') {
           try {
-            var note = paramToNote(moduleActivityLevel(m), 0, 1, snd.scale, snd.octave, snd.octaveRange);
+            var note = paramToNote(act, 0, 1, snd.scale, snd.octave, snd.octaveRange);
             s.synth.triggerAttackRelease ? s.synth.triggerAttackRelease(note, '8n') :
               s.synth.triggerAttackRelease('8n');
           } catch (e) { }
@@ -4751,7 +4751,6 @@
 
         // ── Activity-level melodic ──
         if (snd.bindings.__activity__ === 'melodic' && isBeat) {
-          var act = moduleActivityLevel(m);
           if (act > 0.01) {
             try {
               var note = paramToNote(act, 0, 1, snd.scale, snd.octave, snd.octaveRange);
@@ -4762,11 +4761,11 @@
         }
 
         // ── Activity continuous (drone modulation) ──
-        if (snd.bindings.__activity__ === 'continuous' && frame % _sndFrameDiv === 0) {
-          var act = moduleActivityLevel(m);
+        if (snd.bindings.__activity__ === 'continuous' && fc % _sndFrameDiv === 0) {
+          var contAct = moduleActivityLevel(m);
           try {
             if (s.synth.frequency) {
-              var note = paramToNote(act, 0, 1, snd.scale, snd.octave, snd.octaveRange);
+              var note = paramToNote(contAct, 0, 1, snd.scale, snd.octave, snd.octaveRange);
               s.synth.frequency.rampTo(Tone.Frequency(note).toFrequency(), 0.08);
             }
           } catch (e) { }
@@ -4774,8 +4773,8 @@
 
         // ── Per-param bindings ──
         if (!spec.params) return;
-        var prev = _sndLastParams[m.id] || {};
-        var changed = false;
+        if (!_sndLastParams[m.id]) _sndLastParams[m.id] = {};
+        var prev = _sndLastParams[m.id];
         spec.params.forEach(function (p) {
           var pid = p[0], mode = snd.bindings[pid];
           if (!mode || mode === 'off') return;
@@ -4783,7 +4782,7 @@
           var pmin = p[2], pmax = p[3];
           if (mode === 'melodic') {
             var prevVal = prev[pid];
-            if (prevVal === undefined) { prev[pid] = val; changed = true; return; }
+            if (prevVal === undefined) { prev[pid] = val; return; }
             if (Math.abs(val - prevVal) > (pmax - pmin) * 0.02) {
               try {
                 var note = paramToNote(val, pmin, pmax, snd.scale, snd.octave, snd.octaveRange);
@@ -4791,9 +4790,8 @@
                   s.synth.triggerAttackRelease('16n');
               } catch (e) { }
               prev[pid] = val;
-              changed = true;
             }
-          } else if (mode === 'continuous' && frame % _sndFrameDiv === 0) {
+          } else if (mode === 'continuous' && fc % _sndFrameDiv === 0) {
             try {
               if (s.synth.frequency) {
                 var note = paramToNote(val, pmin, pmax, snd.scale, snd.octave, snd.octaveRange);
@@ -4811,7 +4809,6 @@
             } catch (e) { }
           }
         });
-        if (changed) _sndLastParams[m.id] = prev;
       });
     }
 
