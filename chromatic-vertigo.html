@@ -4683,6 +4683,12 @@
     }
 
     function moduleActivityLevel(m) {
+      // When mic is on use real levels; when off, return a normalized 0-1 sine
+      // so sound bindings have a meaningful value to map to notes.
+      if (!micOn) {
+        var t = (typeof frameCount !== 'undefined' ? frameCount : 0);
+        return 0.3 + 0.7 * Math.abs(Math.sin(t * 0.018 + (m.id ? m.id.length * 0.4 : 0)));
+      }
       var a = AR('vol');
       if (m.type === 'pinwheels' && sBass) a = AR('bass') * 1.2;
       if (m.type === 'particleStorm' && sMid) a = AR('mid');
@@ -4692,6 +4698,7 @@
 
     // ── Per-frame sound update ──
     var _sndPrevBeat = 0;
+    var _sndSynthBeatCount = -1; // tracks last synthetic beat index when mic is off
     function tickSoundEngine() {
       if (!soundEnabled || typeof Tone === 'undefined') return;
 
@@ -4710,8 +4717,18 @@
         _sndBpmLastBeat = now;
       }
 
-      var isBeat = (beatDetect > 0.85 && _sndPrevBeat <= 0.85);
-      _sndPrevBeat = beatDetect;
+      // When mic is active use real beat detection; otherwise drive beats from
+      // the Tone.js Transport so rhythmic/melodic bindings fire at the set BPM.
+      var isBeat;
+      if (micOn) {
+        isBeat = (beatDetect > 0.85 && _sndPrevBeat <= 0.85);
+        _sndPrevBeat = beatDetect;
+      } else {
+        var transportSecs = Tone.Transport.seconds;
+        var synthBeat = Math.floor(transportSecs * _sndGlobalBpm / 60);
+        isBeat = (synthBeat !== _sndSynthBeatCount && transportSecs > 0);
+        if (isBeat) _sndSynthBeatCount = synthBeat;
+      }
 
       var frame = typeof fc !== 'undefined' ? fc : 0;
 
@@ -4735,7 +4752,7 @@
         // ── Activity-level melodic ──
         if (snd.bindings.__activity__ === 'melodic' && isBeat) {
           var act = moduleActivityLevel(m);
-          if (act > 0.05) {
+          if (act > 0.01) {
             try {
               var note = paramToNote(act, 0, 1, snd.scale, snd.octave, snd.octaveRange);
               s.synth.triggerAttackRelease ? s.synth.triggerAttackRelease(note, '16n') :
