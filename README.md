@@ -282,6 +282,65 @@ Click the ✕ button on any preset and confirm.
 
 ---
 
+## Sound Engine
+
+> **Requires a user interaction to activate.** Click **🔊 Enable Sound Engine** in the Sound sidebar section to initialise Tone.js and unlock audio output.
+
+Generates real-time audio synthesis that reacts to the same microphone input and visual module activity as the canvas. Each module can have its own synthesizer with a configurable instrument, scale, octave, and per-parameter binding mode. Sound is **off by default**; no audio is produced until explicitly enabled.
+
+### Global Sound Controls
+
+| Control | Range | Notes |
+|---|---|---|
+| Master Volume | −40 – 0 dB | Ramps smoothly to the new level |
+| BPM | 40 – 200 | Transport tempo for rhythmic sequencing |
+| Reverb | 0 – 1 | Wet/dry send level on a shared plate reverb |
+| ♻ Sync to Beat | toggle | When active, locks BPM to the mic's detected beat tempo |
+
+### Sound Presets
+
+Five named global presets configure all active modules at once:
+
+| Preset | Character |
+|---|---|
+| **Ambient** | FMSynth, continuous audio-reactive pads, Pentatonic Major |
+| **Rhythmic** | MembraneSynth, beat-triggered hits, Pentatonic Minor |
+| **Melodic** | PolySynth, change-detect melody, Lydian scale |
+| **Percussive** | MembraneSynth + beat hits only, Chromatic |
+| **Silence** | Disables all module sound; global engine stays running |
+
+### Per-Module Sound
+
+Each module card gains a **🔊 Sound** sub-panel. Toggle the switch on the right of the panel header to enable sound for that module.
+
+When enabled, the panel exposes:
+
+| Control | Notes |
+|---|---|
+| **Instrument** | Chip selector: PolySynth · FMSynth · AMSynth · PluckSynth · MembraneSynth · MetalSynth · NoiseSynth · Synth Square |
+| **Scale** | Chip selector: Pentatonic Major · Pentatonic Minor · Major · Natural Minor · Dorian · Lydian · Phrygian · Whole Tone · Octatonic · Chromatic |
+| **Volume (dB)** | Per-module gain, −40 – 0 |
+| **Octave** | Base octave, 1 – 7 |
+| **Octave Range** | How many octaves above the base the melody can reach, 1 – 4 |
+| **Reverb Send** | 0 – 1 send into the shared reverb |
+
+### Sound Binding Modes
+
+Every parameter exposed in a module's card — plus two special sources, **Beat Hit** and **Activity Level** — can be independently assigned a binding mode:
+
+| Mode | Behaviour |
+|---|---|
+| **Off** | No sound generated from this parameter |
+| **Melodic** | When the parameter value changes beyond a small threshold, a new note is picked from the scale and triggered |
+| **Rhythmic** | On every detected beat, a note is picked from the scale and triggered |
+| **Continuous** | The parameter value is mapped continuously to a pitch; the synth is re-pitched every frame |
+
+A small blue dot ● on the panel header indicates at least one binding is active. The module card gains a blue left-border highlight when module sound is enabled.
+
+> **Note:** Sound output requires `AudioContext` to be unlocked by a user gesture. The Enable button handles this. All synthesis runs through a shared signal graph: each module's synth feeds a per-module `Tone.Gain` node → a shared `Tone.Gain` master → a shared reverb → `Tone.Destination`.
+
+---
+
 ## Chain Modulation Mode
 
 A pill switcher at the top of the sidebar toggles between **⊞ Layer** mode (the default) and **⛓ Chain** mode. Switching is instant and does not alter any module parameters.
@@ -348,7 +407,8 @@ Small drag handles appear on all four corners and four edges of the canvas. Drag
 
 ### Stack
 - **p5.js v1.7.0** (loaded from cdnjs CDN) — canvas rendering, noise, random, trigonometry helpers
-- **Web Audio API** (native browser) — microphone capture, FFT analysis
+- **Tone.js v14.7.77** (loaded from cdnjs CDN) — synthesis output; PolySynth, FMSynth, AMSynth, PluckSynth, MembraneSynth, MetalSynth, NoiseSynth; `Tone.Transport` for BPM-locked rhythmic sequencing
+- **Web Audio API** (native browser) — microphone capture and FFT analysis (input only); Tone.js manages the output graph
 - **Vanilla JS (ES5-compatible)** — all application logic
 - **CSS custom properties + flexbox** — layout and theming
 - **localStorage** — preset persistence
@@ -381,7 +441,7 @@ All drawing uses p5.js HSB color mode with a 0–360 hue range. The `GH(h)` func
 
 The repository root:
 ```
-chromatic-vertigo.html   ← main file (latest, ~2800 lines)
+chromatic-vertigo.html   ← main file (latest, ~5000 lines)
 README.md
 data/
   chromatic-vertigo-presets-*.json   ← exported preset files
@@ -395,7 +455,7 @@ context/
 `chromatic-vertigo.html` is entirely self-contained:
 - CSS (inline `<style>`) — ~160 lines
 - HTML (sidebar + canvas area) — ~90 lines
-- JavaScript (inline `<script>`) — ~1100 lines
+- JavaScript (inline `<script>`) — ~2500 lines
   - Audio engine and FFT display
   - Params object and module spec definitions
   - UI builders (module cards, hue pickers)
@@ -407,6 +467,7 @@ context/
   - Ten module draw functions
   - UI event handlers
   - Preset system (save/load/export/import)
+  - Sound engine (Tone.js synths, binding modes, per-module UI)
 
 ---
 
