@@ -2378,7 +2378,8 @@
       crystalWeb: { on: false, blend: .85, faces: 20, spinX: .4, spinY: .7, spinZ: .3, perspective: 2.2, edgeGlow: .7, vertexGlow: .5, wireframe: true },
       bloomPetals: { on: false, blend: .8, petals: 7, layers: 3, petalLen: .8, petalWidth: .4, rotSpeed: .6, breathe: .5, innerRing: true },
       lightningArc: { on: false, blend: .9, arcs: 4, forkDepth: 5, spread: .6, restrikeBeat: true, glowWidth: 3, drift: .3 },
-      orbitWeb: { on: false, blend: .75, bodies: 5, trailLen: 120, gravity: .8, initVel: .6, connectLines: true, trailFade: .85 }
+      orbitWeb: { on: false, blend: .75, bodies: 5, trailLen: 120, gravity: .8, initVel: .6, connectLines: true, trailFade: .85 },
+      shapeMask: { on: true, blend: 1, count: 3, shapeType: 0, size: .28, variety: .3, scatter: .55, rotation: 0, polyFaces: 6, splatPoints: 7, splatiness: .45, feather: 0, invert: false, animate: false, animSpeed: 1 }
     };
 
     // Make a fresh instance object for a given type
@@ -2600,6 +2601,28 @@
           ['initVel', 'Init Velocity', 0.1, 2, .05, .6]
         ],
         toggles: [['connectLines', 'Connect Bodies', true], ['trailFade', 'Trail Fade', true]]
+      },
+      shapeMask: {
+        label: '⬟ Shape Masks',
+        params: [
+          ['count', 'Count', 1, 12, 1, 3],
+          ['size', 'Base Size', 0.04, 0.65, 0.01, 0.28],
+          ['variety', 'Size & Shape Variety', 0, 1, 0.01, 0.3],
+          ['scatter', 'Scatter / Spread', 0, 1, 0.01, 0.55],
+          ['rotation', 'Arrangement Angle', 0, 6.28, 0.05, 0],
+          ['polyFaces', 'Polygon Sides', 3, 12, 1, 6],
+          ['splatPoints', 'Splat Points', 3, 12, 1, 7],
+          ['splatiness', 'Splatiness', 0, 1, 0.01, 0.45],
+          ['feather', 'Edge Feather', 0, 1, 0.01, 0],
+          ['animSpeed', 'Anim Speed', 0.1, 5, 0.1, 1]
+        ],
+        selects: [
+          ['shapeType', 'Shape Type', ['Circle', 'Polygon', 'Splat'], 0]
+        ],
+        toggles: [
+          ['invert', 'Invert (show only inside)', false],
+          ['animate', 'Animate', false]
+        ]
       }
     };
 
@@ -3388,7 +3411,7 @@
       pg.colorMode(HSB, 360, 100, 100, 100);
 
       // Draw order based on type priority, preserving duplicates
-      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm'];
+      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm', 'shapeMask'];
       drawOrder.forEach(function (type) {
         params.moduleList.forEach(function (m) {
           if (m.type !== type || !m.on) return;
@@ -3451,6 +3474,7 @@
         case 'bloomPetals': drawBloomPetals(g, am, bm, b); break;
         case 'lightningArc': drawLightningArc(g, am, bm, b); break;
         case 'orbitWeb': drawOrbitWeb(g, am, bm, b); break;
+        case 'shapeMask': drawShapeMask(g, am, bm, b); break;
       }
       _activeModInst = null;
     }
@@ -4083,6 +4107,143 @@
       }
     }
 
+    // ── Shape Masks ──
+    // Draws filled shapes directly onto the graphics buffer using the raw
+    // Canvas 2D API so we can use even-odd fill for the invert mode and
+    // CSS blur filter for soft-edged feathering.
+    //
+    // Normal mode: shapes are filled with the background colour, masking
+    //   (cutting out) the module content that was drawn beneath them.
+    // Invert mode: a full-canvas rect is drawn first; shapes become holes in
+    //   it via the even-odd fill rule so only content inside shapes shows.
+    function drawShapeMask(g, am, bm, b) {
+      var mp = CMP('shapeMask');
+      if (!_activeModInst) return;
+
+      var cx = width / 2, cy = height / 2;
+      var count = Math.max(1, Math.round(mp.count));
+      var shapeType = mp.shapeType; // 0=circle 1=polygon 2=splat
+      var polyFaces = Math.max(3, Math.round(mp.polyFaces));
+      var splatPts = Math.max(3, Math.round(mp.splatPoints));
+      var splatiness = mp.splatiness;
+      var baseSize = mp.size;
+      var variety = mp.variety;
+      var scatter = mp.scatter;
+      var rotation = mp.rotation;
+      var feather = mp.feather;
+      var doAnimate = mp.animate;
+      var animSpeed = mp.animSpeed;
+      var invert = mp.invert;
+
+      // Bass drives a subtle size pulse
+      var audioBoost = AR('bass') * params.audioReact * 0.18;
+
+      var ctx = g.drawingContext;
+      ctx.save();
+
+      // Soft edges via CSS blur filter applied to the shapes
+      if (feather > 0.005) {
+        ctx.filter = 'blur(' + (feather * 22 * (width / 600)).toFixed(1) + 'px)';
+      }
+
+      ctx.beginPath();
+
+      // Invert: outer rect that shapes will punch holes in (even-odd rule)
+      if (invert) {
+        ctx.rect(0, 0, width, height);
+      }
+
+      for (var i = 0; i < count; i++) {
+        // ── Position ──────────────────────────────────────────
+        // Arrange shapes in a ring; scatter controls the ring radius.
+        // A single shape is always centred.
+        var posAngle = count > 1 ? (i / count) * Math.PI * 2 + rotation : 0;
+        var posRadius = count <= 1 ? 0 : width * 0.37 * scatter;
+        var px = cx + Math.cos(posAngle) * posRadius;
+        var py = cy + Math.sin(posAngle) * posRadius;
+
+        // Variety also jitters positions for an organic layout
+        if (variety > 0.01 && count > 1) {
+          px += (noise(i * 7.3 + 100) - 0.5) * width * 0.16 * variety * scatter;
+          py += (noise(i * 13.7 + 200) - 0.5) * height * 0.16 * variety * scatter;
+        }
+
+        // Animation: gentle orbiting drift
+        if (doAnimate) {
+          var t = fc * animSpeed * 0.012;
+          px += Math.sin(t + i * 1.57) * width * 0.05;
+          py += Math.cos(t * 0.8 + i * 2.3) * height * 0.05;
+        }
+
+        // ── Size ──────────────────────────────────────────────
+        // At variety=0 all shapes are the same size; at variety=1
+        // the noise field produces a 3× range of sizes.
+        var szFactor = variety > 0.01
+          ? Math.max(0.08, (noise(i * 5.1 + 300) * 2.0) * variety + (1.0 - variety))
+          : 1.0;
+        var r = width * baseSize * 0.5 * szFactor * (1 + audioBoost);
+
+        // ── Per-shape rotation ─────────────────────────────────
+        // Variety staggers shapes; animation counter-rotates alternates.
+        var rot = rotation
+          + i * (Math.PI / Math.max(count, 1)) * variety
+          + (doAnimate ? fc * animSpeed * 0.01 * (i % 2 === 0 ? 1 : -1) : 0);
+
+        // ── Shape paths ───────────────────────────────────────
+        if (shapeType === 0) {
+          // Circle
+          ctx.moveTo(px + r, py);
+          ctx.arc(px, py, r, 0, Math.PI * 2);
+
+        } else if (shapeType === 1) {
+          // Regular polygon — number of sides controlled by polyFaces
+          ctx.moveTo(px + Math.cos(rot) * r, py + Math.sin(rot) * r);
+          for (var v = 1; v <= polyFaces; v++) {
+            var a = rot + v * Math.PI * 2 / polyFaces;
+            ctx.lineTo(px + Math.cos(a) * r, py + Math.sin(a) * r);
+          }
+          ctx.closePath();
+
+        } else {
+          // Splat — noise-warped organic blob drawn as smooth quadratic
+          // bezier curves through noise-positioned control points.
+          var tAnim = doAnimate ? fc * animSpeed * 0.008 : 0;
+          // Build control-point array
+          var blobPts = [];
+          for (var v = 0; v < splatPts; v++) {
+            var a = rot + v * Math.PI * 2 / splatPts;
+            var ca = Math.cos(a - rot), sa = Math.sin(a - rot);
+            var nr = noise(ca * splatiness * 2.5 + i * 3.3,
+                           sa * splatiness * 2.5 + i * 7.1, tAnim);
+            var rad = r * (0.4 + nr * 1.25);
+            blobPts.push({ x: px + Math.cos(a) * rad, y: py + Math.sin(a) * rad });
+          }
+          // Smooth Catmull-Rom style: draw midpoint-to-midpoint beziers
+          var n = blobPts.length;
+          var mid0x = (blobPts[n - 1].x + blobPts[0].x) / 2;
+          var mid0y = (blobPts[n - 1].y + blobPts[0].y) / 2;
+          ctx.moveTo(mid0x, mid0y);
+          for (var v = 0; v < n; v++) {
+            var p0 = blobPts[v];
+            var p1 = blobPts[(v + 1) % n];
+            ctx.quadraticCurveTo(p0.x, p0.y, (p0.x + p1.x) / 2, (p0.y + p1.y) / 2);
+          }
+          ctx.closePath();
+        }
+      }
+
+      // Fill with background colour; invert uses even-odd so shapes are holes
+      ctx.fillStyle = 'rgb(12,12,11)';
+      if (invert) {
+        ctx.fill('evenodd');
+      } else {
+        ctx.fill();
+      }
+
+      ctx.filter = 'none';
+      ctx.restore();
+    }
+
     // ═══════════════════════════════════════════════════════
     // UI HANDLERS
     // ═══════════════════════════════════════════════════════
@@ -4169,7 +4330,7 @@
       { src: 'fractureWeb', dst: 'kaleidoscope', style: 'kaleid', strength: 0.7 }
     ];
 
-    var MOD_KEYS = ['pinwheels', 'fractureWeb', 'lissajous', 'spirograph', 'particleStorm', 'kaleidoscope', 'moireGrid', 'pulseRings', 'chaosTunnel', 'noiseField'];
+    var MOD_KEYS = ['pinwheels', 'fractureWeb', 'lissajous', 'spirograph', 'particleStorm', 'kaleidoscope', 'moireGrid', 'pulseRings', 'chaosTunnel', 'noiseField', 'shapeMask'];
 
     // Off-screen buffers for chain rendering: one per module
     var chainBuffers = {}; // key -> p5.Graphics
@@ -4357,7 +4518,7 @@
       else pg.background(12, 12, 11);
       pg.colorMode(HSB, 360, 100, 100, 100);
 
-      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm'];
+      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm', 'shapeMask'];
       drawOrder.forEach(function (type) {
         params.moduleList.forEach(function (m) {
           if (m.type !== type || !m.on) return;
