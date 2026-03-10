@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromatic Vertigo — Chaos Engine</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1>Chromatic Vertigo</h1>
+            <p class="subtitle">10 chaos modules · audio-reactive · fully controllable</p>
+            <div class="mode-toggle-bar">
+                <button class="mode-btn active" id="modeLayer" onclick="setMode('layer')">⊞ Layer</button>
+                <button class="mode-btn" id="modeChain" onclick="setMode('chain')">⛓ Chain</button>
+            </div>
+
+            <!-- AUDIO -->
+            <div class="sec">
+                <h3>Audio Input</h3>
+                <div id="micBadge" class="mic-badge off">Microphone inactive</div>
+                <button class="btn pri" onclick="toggleMic()">🎤 Enable Microphone</button>
+                <div class="beat-flash" id="beatFlash"><span class="beat-dot"></span>BEAT</div>
+            </div>
+
+            <!-- AUDIO MAPPING -->
+            <div class="sec">
+                <h3>Audio → Visual</h3>
+                <!-- Live meter bars -->
+                <div class="amap-grid" id="amapMeters">
+                    <div>
+                        <div class="amap-row"><span class="amap-label">VOLUME</span>
+                            <div class="amap-bar-wrap">
+                                <div class="amap-bar" id="mVol"
+                                    style="background:linear-gradient(90deg,#788c5d,#a8c47d)"></div>
+                            </div><span class="amap-val" id="mVolV">0.00</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="amap-row"><span class="amap-label">BASS</span>
+                            <div class="amap-bar-wrap">
+                                <div class="amap-bar" id="mBass"
+                                    style="background:linear-gradient(90deg,#d97757,#f5a87a)"></div>
+                            </div><span class="amap-val" id="mBassV">0.00</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="amap-row"><span class="amap-label">MIDS</span>
+                            <div class="amap-bar-wrap">
+                                <div class="amap-bar" id="mMid"
+                                    style="background:linear-gradient(90deg,#6a9bcc,#9ac0e8)"></div>
+                            </div><span class="amap-val" id="mMidV">0.00</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="amap-row"><span class="amap-label">HIGHS</span>
+                            <div class="amap-bar-wrap">
+                                <div class="amap-bar" id="mHi"
+                                    style="background:linear-gradient(90deg,#b07acc,#d4a8e8)"></div>
+                            </div><span class="amap-val" id="mHiV">0.00</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="amap-row"><span class="amap-label">BEAT</span>
+                            <div class="amap-bar-wrap">
+                                <div class="amap-bar" id="mBeat"
+                                    style="background:linear-gradient(90deg,#ff6b35,#ffaa35)"></div>
+                            </div><span class="amap-val" id="mBeatV">0.00</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Mapping config -->
+                <div class="amap-section">
+                    <button class="amap-collapse-btn" onclick="toggleAmapPanel()">
+                        <span class="amap-collapse-label">Routing &amp; Mapping</span>
+                        <span class="amap-collapse-arrow" id="amapArrow">▶</span>
+                    </button>
+                    <div id="amapPanel" style="display:none">
+                        <!-- Presets -->
+                        <div
+                            style="font-size:10px;font-weight:600;color:var(--mid);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">
+                            Built-in Presets</div>
+                        <div class="amap-presets-row" id="amapBuiltinRow"></div>
+                        <div id="amapUserSection"></div>
+                        <!-- Save row -->
+                        <div class="save-row" style="margin-bottom:10px">
+                            <input type="text" id="amapSaveName" placeholder="Name this mapping…" maxlength="40">
+                            <button class="btn pri" style="width:auto;padding:6px 10px;margin:0;flex-shrink:0"
+                                onclick="saveAudioMapping()">Save</button>
+                        </div>
+                        <!-- Slot editors -->
+                        <div
+                            style="font-size:10px;font-weight:600;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
+                            Signal Routing</div>
+                        <div id="amapSlots"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEED -->
+            <div class="sec">
+                <h3>Seed</h3>
+                <input type="number" class="seed-in" id="seedIn" value="42" onchange="doUpdateSeed()">
+                <div class="g2"><button class="btn" onclick="doPrevSeed()">← Prev</button><button class="btn"
+                        onclick="doNextSeed()">Next →</button></div>
+                <button class="btn" onclick="doRndSeed()">🎲 Random Seed</button>
+            </div>
+
+            <!-- GLOBAL -->
+            <div class="sec">
+                <h3>Global <button class="rnd-btn" onclick="randomizeGlobal()"
+                        title="Randomize global params">🎲</button></h3>
+                <div class="cg"><label>Spin Speed</label>
+                    <div class="srow"><input type="range" id="spinSpeed" min=".001" max=".06" step=".001" value=".012"
+                            oninput="gp('spinSpeed',+this.value)"><span class="val" id="spinSpeed-v">.012</span></div>
+                </div>
+                <div class="cg"><label>Audio Reactivity</label>
+                    <div class="srow"><input type="range" id="audioReact" min="0" max="5" step=".1" value="2"
+                            oninput="gp('audioReact',+this.value)"><span class="val" id="audioReact-v">2.0</span></div>
+                </div>
+                <div class="cg"><label>Hue Speed</label>
+                    <div class="srow"><input type="range" id="hueSpeed" min="0" max="4" step=".1" value="1"
+                            oninput="gp('hueSpeed',+this.value)"><span class="val" id="hueSpeed-v">1.0</span></div>
+                </div>
+                <div class="cg"><label>Chaos Amount</label>
+                    <div class="srow"><input type="range" id="chaos" min="0" max="1" step=".01" value=".2"
+                            oninput="gp('chaos',+this.value)"><span class="val" id="chaos-v">.20</span></div>
+                </div>
+                <div class="cg"><label>Persistence / Trails</label>
+                    <div class="srow"><input type="range" id="persist" min="0" max=".98" step=".01" value=".3"
+                            oninput="gp('persist',+this.value)"><span class="val" id="persist-v">.30</span></div>
+                </div>
+                <div class="cg"><label>Global Brightness</label>
+                    <div class="srow"><input type="range" id="brightness" min=".3" max="1.5" step=".05" value="1"
+                            oninput="gp('brightness',+this.value)"><span class="val" id="brightness-v">1.0</span></div>
+                </div>
+                <div class="cg"><label>Color Saturation</label>
+                    <div class="srow"><input type="range" id="saturation" min="0" max="1.5" step=".05" value="1"
+                            oninput="gp('saturation',+this.value)"><span class="val" id="saturation-v">1.0</span></div>
+                </div>
+                <div class="hue-picker" id="globalHuePicker"></div>
+            </div>
+
+            <!-- MODULES (layer mode) -->
+            <div class="sec" id="layerModeSec">
+                <h3>Modules <button class="rnd-btn" onclick="randomizeAllMods()"
+                        title="Randomize all module params">🎲</button>
+                </h3>
+                <div class="modules" id="modList"></div>
+            </div>
+
+            <!-- CHAIN MODE -->
+            <div class="sec" id="chainModeSec" style="display:none">
+                <h3>Chain <button class="rnd-btn" onclick="randomizeChain()" title="Randomize chain">🎲</button></h3>
+                <p style="font-size:10px;color:var(--mid);margin-bottom:10px;line-height:1.5">Each link routes one
+                    module's
+                    output to modulate another's parameters. Modules not in a chain draw normally.</p>
+                <div id="chainList"></div>
+                <button class="btn" onclick="addChainLink()" style="margin-top:4px">+ Add Link</button>
+            </div>
+
+            <!-- PRESETS -->
+            <div class="sec">
+                <h3>Presets</h3>
+                <div class="preset-list" id="presetList"></div>
+                <div class="save-row">
+                    <input type="text" id="presetNameIn" placeholder="Name this preset…" maxlength="40">
+                    <button class="btn pri" onclick="doSavePreset()">Save</button>
+                </div>
+                <div class="io-row">
+                    <button class="btn" style="flex:1" onclick="doExportPresets()">⬇ Export JSON</button>
+                    <button class="btn" style="flex:1" onclick="doImportClick()">⬆ Import JSON</button>
+                </div>
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImportFile(this)">
+            </div>
+
+            <!-- DISPLAY -->
+            <div class="sec">
+                <h3>Display</h3>
+                <div class="cg" id="swChipsCg">
+                    <label>Panel Width</label>
+                </div>
+                <div class="cg">
+                    <label>Aspect Lock <span style="font-weight:400;color:var(--mid)">(drag canvas
+                            corners)</span></label>
+                    <div class="size-chips" id="aspectChips">
+                        <span class="size-chip active" onclick="setAspect('free')">Free</span>
+                        <span class="size-chip" onclick="setAspect('1:1')">1:1</span>
+                        <span class="size-chip" onclick="setAspect('16:9')">16:9</span>
+                        <span class="size-chip" onclick="setAspect('4:3')">4:3</span>
+                        <span class="size-chip" onclick="setAspect('9:16')">9:16</span>
+                    </div>
+                </div>
+                <div class="g2" style="margin-top:4px">
+                    <button class="btn" id="fsBtn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                    <button class="btn" id="specBtn" onclick="toggleSpectrum()">📊 Spectrum: On</button>
+                </div>
+            </div>
+
+            <div class="sec">
+                <h3>Actions</h3>
+                <div class="g2"><button class="btn" onclick="doResetAll()">↺ Reset All</button><button class="btn"
+                        onclick="doSave()">💾 Save PNG</button></div>
+                <button class="btn" onclick="randomizeEverything()">🎲 Randomize Everything</button>
+            </div>
+        </div>
+
+        <div class="canvas-area">
+            <div id="cc">
+                <div id="meterOverlay">
+                    <canvas id="fftCanvas" height="56"></canvas>
+                    <div class="freq-legend">
+                        <span>SUB</span><span>BASS</span><span>LO-MID</span><span>MID</span><span>HI-MID</span><span>HIGHS</span><span>AIR</span>
+                    </div>
+                </div>
+                <!-- resize handles -->
+                <div class="rh rh-se" data-dir="se"></div>
+                <div class="rh rh-sw" data-dir="sw"></div>
+                <div class="rh rh-ne" data-dir="ne"></div>
+                <div class="rh rh-nw" data-dir="nw"></div>
+                <div class="rh rh-e" data-dir="e"></div>
+                <div class="rh rh-s" data-dir="s"></div>
+                <div class="rh rh-n" data-dir="n"></div>
+                <div class="rh rh-w" data-dir="w"></div>
+            </div>
+            <div id="sizeBadge"></div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
