@@ -2,10 +2,7 @@
 
 A real-time generative art visualizer built as a single self-contained HTML file. Ten independently blendable visual modules run simultaneously on a p5.js canvas, all of them responsive to live microphone input and tunable through a dense but compact sidebar of controls. No build step, no dependencies to install — open the file in a browser and it runs.
 
-<video controls width="320" height="240">
-  <source src="demo/chromatic-vertigo-demo.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+https://github.com/user-attachments/assets/09a04058-ca40-476c-911a-1b693a563348
 
 ---
 
