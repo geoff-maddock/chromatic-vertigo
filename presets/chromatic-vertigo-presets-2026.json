@@ -1,0 +1,229 @@
+{
+  "app": "ChromaticVertigo",
+  "version": 1,
+  "exportedAt": "2026-03-11T17:17:49.505Z",
+  "presets": [
+    {
+      "name": "space-hub",
+      "savedAt": 1773174115864,
+      "params": {
+        "seed": 316259,
+        "spinSpeed": 0.026,
+        "audioReact": 2.8,
+        "hueSpeed": 0.9,
+        "chaos": 0.13,
+        "persist": 0.77,
+        "brightness": 1.25,
+        "saturation": 1.35,
+        "fxEchoOn": false,
+        "fxEchoCount": 4,
+        "fxEchoDecay": 0.7,
+        "fxEchoScale": 0.98,
+        "fxEchoRotate": 0.01,
+        "fxEchoHueDrift": 0,
+        "fxFeedbackOn": false,
+        "fxFeedbackAmount": 0.85,
+        "fxFeedbackZoom": 1.01,
+        "fxFeedbackRotate": 0.005,
+        "fxFeedbackHue": 0,
+        "fxAberrationOn": false,
+        "fxAberrationAmount": 10,
+        "fxAberrationAngle": 0,
+        "fxGlitchRate": 0.03,
+        "fxGlitchIntensity": 0.5,
+        "fxGlitchHeight": 0.08,
+        "fxMirrorOn": false,
+        "fxMirrorSegments": 6,
+        "fxMirrorAngle": 0,
+        "fxMirrorBlend": 1,
+        "fxMirrorZoom": 1,
+        "fxWarpOn": false,
+        "fxWarpAmount": 20,
+        "fxWarpScale": 0.005,
+        "fxWarpSpeed": 1,
+        "fxWarpTwirl": 0,
+        "fxWarpReact": 0.5,
+        "hueRange": {
+          "start": 358,
+          "end": 190
+        },
+        "moduleList": [
+          {
+            "on": true,
+            "blend": 0.6997,
+            "lines": 65,
+            "webDepth": 4,
+            "spreadAngle": 0.6,
+            "colorShift": 65,
+            "radiate": true,
+            "webSpin": 0.7,
+            "type": "fractureWeb",
+            "id": "fractureWeb_30",
+            "hueRange": {
+              "start": 328,
+              "end": 198
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "PluckSynth",
+              "scale": "Pentatonic Minor",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.15,
+              "reverbSend": 0.45,
+              "bpmOffset": 0,
+              "bindings": {
+                "webDepth": "melodic",
+                "spreadAngle": "continuous",
+                "lines": "off",
+                "webSpin": "off",
+                "__beat__": "rhythmic",
+                "__activity__": "off"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.4065,
+            "ringN": 25,
+            "thickness": 4.3,
+            "spacing": 0.13,
+            "elliptic": true,
+            "eccentricity": 0.25,
+            "noiseWarp": 0.55,
+            "fill": false,
+            "type": "pulseRings",
+            "id": "pulseRings_31",
+            "hueRange": {
+              "start": 359,
+              "end": 190
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "MembraneSynth",
+              "scale": "Pentatonic Minor",
+              "octave": 3,
+              "octaveRange": 1,
+              "volume": -0.1,
+              "reverbSend": 0.25,
+              "bpmOffset": 0,
+              "bindings": {
+                "ringN": "melodic",
+                "thickness": "off",
+                "spacing": "off",
+                "noiseWarp": "continuous",
+                "__beat__": "rhythmic",
+                "__activity__": "off"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.5827,
+            "freqA": 2,
+            "freqB": 4,
+            "density": 150,
+            "layers": 5,
+            "phaseSpeed": 2.1,
+            "strokeW": 4,
+            "rainbow": true,
+            "type": "lissajous",
+            "id": "lissajous_32",
+            "hueRange": {
+              "start": 141,
+              "end": 279
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "FMSynth",
+              "scale": "Lydian",
+              "octave": 3,
+              "octaveRange": 2,
+              "volume": -0.18,
+              "reverbSend": 0.5,
+              "bpmOffset": 0,
+              "bindings": {
+                "freqA": "continuous",
+                "freqB": "continuous",
+                "phaseSpeed": "off",
+                "layers": "melodic",
+                "__beat__": "off",
+                "__activity__": "off"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.8473,
+            "scale": 0.021,
+            "warp": 2.7,
+            "step": 16,
+            "arrowLen": 0.4,
+            "curl": false,
+            "colorMode": 2,
+            "type": "noiseField",
+            "id": "noiseField_33",
+            "hueRange": {
+              "start": 294,
+              "end": 217
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "NoiseSynth",
+              "scale": "Pentatonic Major",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.22,
+              "reverbSend": 0.5,
+              "bpmOffset": 0,
+              "bindings": {
+                "warp": "continuous",
+                "scale": "off",
+                "step": "off",
+                "arrowLen": "off",
+                "__beat__": "off",
+                "__activity__": "continuous"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.5544,
+            "R": 0.25,
+            "r": 0.35,
+            "d": 0.45,
+            "passes": 2,
+            "traceSpeed": 1.1,
+            "strokeW": 0.5,
+            "fill": false,
+            "type": "spirograph",
+            "id": "spirograph_34",
+            "hueRange": {
+              "start": 246,
+              "end": 85
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "AMSynth",
+              "scale": "Dorian",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.15,
+              "reverbSend": 0.4,
+              "bpmOffset": 0,
+              "bindings": {
+                "traceSpeed": "rhythmic",
+                "R": "continuous",
+                "r": "off",
+                "d": "off",
+                "passes": "melodic",
+                "__beat__": "off",
+                "__activity__": "off"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

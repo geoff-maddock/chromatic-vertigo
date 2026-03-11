@@ -7,6 +7,7 @@
   <title>Chromatic Vertigo — Chaos Engine</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+  <script src="https://unpkg.com/hydra-synth"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap"
     rel="stylesheet">
   <style>
@@ -763,6 +764,19 @@
       background: #fff8f5;
     }
 
+    .mod-chev {
+      font-size: 11px;
+      color: var(--mid);
+      flex-shrink: 0;
+      display: inline-block;
+      transition: transform .15s;
+      line-height: 1;
+    }
+
+    .mod-card.expanded .mod-chev {
+      transform: rotate(90deg);
+    }
+
     .mod-name {
       font-size: 11px;
       font-weight: 600;
@@ -807,7 +821,7 @@
       display: none;
     }
 
-    .mod-card.active .mod-body {
+    .mod-card.expanded .mod-body {
       display: block;
     }
 
@@ -1555,6 +1569,80 @@
       text-align: right;
     }
 
+    /* ── Hydra Synth module UI ── */
+    .hydra-code {
+      width: 100%;
+      min-height: 90px;
+      max-height: 200px;
+      resize: vertical;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      line-height: 1.5;
+      padding: 6px 8px;
+      border: 1px solid var(--lgray);
+      border-radius: 6px;
+      background: #1a1a18;
+      color: #e8e4d8;
+      outline: none;
+      box-sizing: border-box;
+      tab-size: 2;
+    }
+    .hydra-code:focus { border-color: var(--orange); }
+    .hydra-presets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-top: 5px; }
+    .hydra-preset-btn {
+      padding: 4px 6px;
+      font-size: 10px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      border: 1px solid var(--lgray);
+      border-radius: 5px;
+      background: var(--light);
+      color: var(--dark);
+      cursor: pointer;
+      transition: all .15s;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hydra-preset-btn:hover { background: var(--orange); color: white; border-color: var(--orange); }
+    .hydra-preset-btn.active { background: var(--orange); color: white; border-color: var(--orange); }
+    .hydra-apply-btn {
+      width: 100%;
+      margin-top: 5px;
+      padding: 5px;
+      font-size: 10px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      background: var(--orange);
+      color: white;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .hydra-apply-btn:hover { background: #c86641; }
+    .hydra-error {
+      margin-top: 4px;
+      padding: 5px 7px;
+      background: #fff0ee;
+      border: 1px solid #f0b8b0;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 9px;
+      color: #c05040;
+      word-break: break-all;
+      display: none;
+    }
+    .hydra-error.visible { display: block; }
+    .hydra-status {
+      font-size: 9px;
+      color: var(--mid);
+      margin-top: 3px;
+      text-align: center;
+      font-style: italic;
+    }
+
     /* per-module override section */
     .mod-aov-toggle {
       display: flex;
@@ -2002,6 +2090,9 @@
     </div>
   </div>
 
+  <!-- Hidden canvas for Hydra Synth rendering -->
+  <canvas id="hydra-canvas" style="display:none;position:absolute;pointer-events:none;"></canvas>
+
   <script>
     // ═══════════════════════════════════════════════════════
     // AUDIO ENGINE
@@ -2379,7 +2470,8 @@
       bloomPetals: { on: false, blend: .8, petals: 7, layers: 3, petalLen: .8, petalWidth: .4, rotSpeed: .6, breathe: .5, innerRing: true },
       lightningArc: { on: false, blend: .9, arcs: 4, forkDepth: 5, spread: .6, restrikeBeat: true, glowWidth: 3, drift: .3 },
       orbitWeb: { on: false, blend: .75, bodies: 5, trailLen: 120, gravity: .8, initVel: .6, connectLines: true, trailFade: .85 },
-      shapeMask: { on: true, blend: 1, count: 3, shapeType: 0, size: .28, variety: .3, scatter: .55, rotation: 0, polyFaces: 6, splatPoints: 7, splatiness: .45, feather: 0, invert: false, animate: false, animSpeed: 1 }
+      shapeMask: { on: true, blend: 1, count: 3, shapeType: 0, size: .28, variety: .3, scatter: .55, rotation: 0, polyFaces: 6, splatPoints: 7, splatiness: .45, feather: 0, invert: false, animate: false, animSpeed: 1 },
+      hydra: { on: false, blend: 1, code: 'osc(40,0.09,0.9).color(0.9,0,1).rotate(0.2,0.05).kaleid(3).blend(o0,0.95).out(o0)' }
     };
 
     // Make a fresh instance object for a given type
@@ -2602,6 +2694,11 @@
         ],
         toggles: [['connectLines', 'Connect Bodies', true], ['trailFade', 'Trail Fade', true]]
       },
+      hydra: {
+        label: '🌊 Hydra Synth',
+        params: [],
+        hydraCustom: true
+      },
       shapeMask: {
         label: '⬟ Shape Masks',
         params: [
@@ -2638,10 +2735,11 @@
         var instLabel = sameType.length > 1 ? ' #' + instNum : '';
 
         var card = document.createElement('div');
-        card.className = 'mod-card' + (m.on ? ' active' : ''); card.id = 'card-' + id;
+        card.className = 'mod-card' + (m.on ? ' active' : '') + (m.on ? ' expanded' : ''); card.id = 'card-' + id;
 
         // Header
         var head = '<div class="mod-head" onclick="expandMod(\'' + id + '\')">';
+        head += '<span class="mod-chev" id="chev-' + id + '">›</span>';
         head += '<span class="mod-name">' + spec.label + instLabel + '</span>';
         head += '<button class="mod-toggle' + (m.on ? ' on' : '') + '" id="tog-' + id + '" onclick="event.stopPropagation();toggleMod(\'' + id + '\')"></button>';
         head += '</div>';
@@ -2672,6 +2770,23 @@
             s[2].forEach(function (opt, i) { body += '<option value="' + i + '"' + (val == i ? ' selected' : '') + '>' + opt + '</option>'; });
             body += '</select></div>';
           });
+        }
+
+        if (spec.hydraCustom) {
+          var hCode = (m.code || HYDRA_PRESETS[0].code).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+          body += '<div class="cg">';
+          body += '<label>Code <span style="font-weight:400;color:var(--mid)">(Hydra syntax)</span></label>';
+          body += '<textarea class="hydra-code" id="hydra-ta-' + id + '" spellcheck="false" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key===\'Enter\'){event.preventDefault();hydraRunCode(\'' + id + '\')}">' + hCode + '</textarea>';
+          body += '<div class="hydra-error" id="hydra-err-' + id + '"></div>';
+          body += '<div class="hydra-status" id="hydra-st-' + id + '">Press Run or Ctrl+Enter to apply</div>';
+          body += '<button class="hydra-apply-btn" onclick="hydraRunCode(\'' + id + '\')">▶ Run</button>';
+          body += '<div style="margin-top:6px;font-size:10px;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Presets</div>';
+          body += '<div class="hydra-presets">';
+          HYDRA_PRESETS.forEach(function (p, i) {
+            body += '<button class="hydra-preset-btn" onclick="hydraLoadPreset(\'' + id + '\',' + i + ')">' + p.name + '</button>';
+          });
+          body += '</div>';
+          body += '</div>';
         }
 
         body += '</div>'; // mod-params
@@ -2725,15 +2840,38 @@
       });
     }
 
+    function hydraRunCode(id) {
+      var m = getModById(id); if (!m) return;
+      var ta = document.getElementById('hydra-ta-' + id);
+      if (ta) m.code = ta.value;
+      if (!_hydraInst) initHydra();
+      applyHydraCode(m.code, id);
+    }
+
+    function hydraLoadPreset(id, idx) {
+      var m = getModById(id); if (!m) return;
+      var p = HYDRA_PRESETS[idx]; if (!p) return;
+      m.code = p.code;
+      var ta = document.getElementById('hydra-ta-' + id);
+      if (ta) ta.value = p.code;
+      if (!_hydraInst) initHydra();
+      applyHydraCode(m.code, id);
+      // highlight active preset btn
+      var card = document.getElementById('card-' + id);
+      if (card) card.querySelectorAll('.hydra-preset-btn').forEach(function (b, i) {
+        b.classList.toggle('active', i === idx);
+      });
+    }
+
     function addModInstance(type) {
       var inst = makeModInstance(type, nextModId());
       inst.on = true;
       params.moduleList.push(inst);
       if (type === 'pinwheels' || type === 'particleStorm') doInitSys();
       buildModUI();
-      // Auto-open the new card
+      // Auto-expand the new card
       var card = document.getElementById('card-' + inst.id);
-      if (card) { var body = card.querySelector('.mod-body'); if (body) body.style.display = 'block'; }
+      if (card) card.classList.add('expanded');
     }
 
     function duplicateMod(id) {
@@ -2745,7 +2883,7 @@
       if (inst.type === 'pinwheels' || inst.type === 'particleStorm') doInitSys();
       buildModUI();
       var card = document.getElementById('card-' + inst.id);
-      if (card) { var body = card.querySelector('.mod-body'); if (body) body.style.display = 'block'; }
+      if (card) card.classList.add('expanded');
     }
 
     function deleteMod(id) {
@@ -2760,16 +2898,21 @@
 
     function expandMod(id) {
       var card = document.getElementById('card-' + id); if (!card) return;
-      var body = card.querySelector('.mod-body');
-      if (body) { body.style.display = (body.style.display === 'block') ? 'none' : 'block'; }
+      card.classList.toggle('expanded');
     }
 
     function toggleMod(id) {
       var m = getModById(id); if (!m) return;
       m.on = !m.on;
       var tog = document.getElementById('tog-' + id); if (tog) tog.classList.toggle('on');
-      var card = document.getElementById('card-' + id); if (card) card.classList.toggle('active');
+      var card = document.getElementById('card-' + id);
+      if (card) {
+        card.classList.toggle('active', m.on);
+        // Auto-expand when enabling so parameters are immediately visible
+        if (m.on) card.classList.add('expanded');
+      }
       if (m.type === 'pinwheels' || m.type === 'particleStorm') doInitSys();
+      if (m.type === 'hydra' && m.on && m.code) { initHydra(); applyHydraCode(m.code, id); }
     }
     function setModP(id, prop, v, dispId) {
       var m = getModById(id); if (!m) return;
@@ -2901,7 +3044,8 @@
       crystalWeb: { faces: [4, 60], spinX: [0, 2], spinY: [0, 2], spinZ: [0, 2], perspective: [1, 5], edgeGlow: [0, 1], vertexGlow: [0, 1], blend: [.3, 1] },
       bloomPetals: { petals: [3, 24], layers: [1, 5], petalLen: [.2, 1.2], petalWidth: [.1, 1], rotSpeed: [0, 2], breathe: [0, 1], blend: [.3, 1] },
       lightningArc: { arcs: [1, 12], forkDepth: [2, 8], spread: [.1, 1], glowWidth: [1, 8], drift: [0, 1], blend: [.3, 1] },
-      orbitWeb: { bodies: [2, 12], trailLen: [20, 300], gravity: [.1, 3], initVel: [.1, 2], blend: [.3, 1] }
+      orbitWeb: { bodies: [2, 12], trailLen: [20, 300], gravity: [.1, 3], initVel: [.1, 2], blend: [.3, 1] },
+      hydra: { blend: [.3, 1] }
     };
     function rndBetween(a, b, step) { var v = a + Math.random() * (b - a); if (step) v = Math.round(v / step) * step; return parseFloat(v.toFixed(4)); }
 
@@ -2925,7 +3069,7 @@
       buildModUI();
       if (k === 'pinwheels' || k === 'particleStorm') doInitSys();
       var card = document.getElementById('card-' + id);
-      if (card) { var body = card.querySelector('.mod-body'); if (body) body.style.display = 'block'; }
+      if (card) card.classList.add('expanded');
     }
 
     function resetMod(id) {
@@ -3128,6 +3272,11 @@
       initSound(); buildGlobalSoundUI();
       var ghp = document.getElementById('globalHuePicker');
       if (ghp) buildHuePicker(ghp, 'Global Hue Range', params.hueRange, function (s, e) { params.hueRange.start = s; params.hueRange.end = e; });
+      // Init Hydra engine; apply code for any hydra modules that start enabled
+      initHydra();
+      params.moduleList.forEach(function (m) {
+        if (m.type === 'hydra' && m.on && m.code) applyHydraCode(m.code, m.id);
+      });
     }
 
     function doInitSys() {
@@ -3411,7 +3560,7 @@
       pg.colorMode(HSB, 360, 100, 100, 100);
 
       // Draw order based on type priority, preserving duplicates
-      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm', 'shapeMask'];
+      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm', 'hydra', 'shapeMask'];
       drawOrder.forEach(function (type) {
         params.moduleList.forEach(function (m) {
           if (m.type !== type || !m.on) return;
@@ -3438,6 +3587,82 @@
     }
 
     // ═══════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════
+    // HYDRA SYNTH ENGINE
+    // ═══════════════════════════════════════════════════════
+    var _hydraInst = null;
+    var _hydraErrors = {};  // keyed by module id
+
+    // Presets shipped with the module
+    var HYDRA_PRESETS = [
+      { name: 'Flor',      code: 'osc(40,0.09,0.9).color(0.9,0,1).rotate(0.2,0.05).kaleid(3).blend(o0,0.95).out(o0)' },
+      { name: 'Ripple',    code: 'osc(10,0.01,0.9).rotate(0,0.1).color(0,1,0.9).blend(o0,0.9).out(o0)' },
+      { name: 'Plasma',    code: 'osc(60,0.1,1.4).color(1.5,0,1.8).rotate(0.6,0.1).kaleid(6).blend(o0,0.8).out(o0)' },
+      { name: 'Noise Web', code: 'noise(3,0.1).mult(osc(3,0.5,0.5)).out(o0)' },
+      { name: 'Gradient',  code: 'gradient(0.01).saturate(1.5).hue(0.3).out(o0)' },
+      { name: 'Voronoi',   code: 'voronoi(5,0.3,0.3).color(0.9,0.3,1).rotate(0.1,0.05).out(o0)' },
+      { name: 'Prism',     code: 'shape(3,0.5,0.001).color(0.9,0,0.8).repeat(3,3).rotate(0,0.05).kaleid(6).out(o0)' },
+      { name: 'Aurora',    code: 'osc(5,0.06,0.8).rotate(0.3,0.03).color(0.5,0.9,1.2).blend(o0,0.94).out(o0)' }
+    ];
+
+    function initHydra() {
+      if (_hydraInst) return;
+      var hc = document.getElementById('hydra-canvas');
+      if (!hc || typeof Hydra === 'undefined') { console.warn('Hydra not available'); return; }
+      hc.width = width;
+      hc.height = height;
+      // Save p5 noise before Hydra overwrites it (makeGlobal:false avoids conflict)
+      try {
+        _hydraInst = new Hydra({ canvas: hc, detectAudio: false, makeGlobal: false });
+      } catch (e) { console.warn('Hydra init error:', e); }
+    }
+
+    function applyHydraCode(code, modId) {
+      if (!_hydraInst) initHydra();
+      if (!_hydraInst) return;
+      var s = _hydraInst.synth;
+      if (!s) return;
+      // Build an eval context with all Hydra synth functions as locals
+      var fnArgs = [
+        'osc', 'noise', 'voronoi', 'shape', 'gradient', 'solid', 'src', 'render', 'hush',
+        'o0', 'o1', 'o2', 'o3', 's0', 's1', 's2', 's3', 'a', 'mouse', code
+      ];
+      try {
+        // eslint-disable-next-line no-new-func
+        (new Function(
+          'osc', 'noise', 'voronoi', 'shape', 'gradient', 'solid', 'src', 'render', 'hush',
+          'o0', 'o1', 'o2', 'o3', 's0', 's1', 's2', 's3', 'a', 'mouse',
+          code
+        ))(
+          s.osc.bind(s), s.noise.bind(s), s.voronoi.bind(s), s.shape.bind(s),
+          s.gradient.bind(s), s.solid.bind(s), s.src.bind(s), s.render.bind(s), s.hush.bind(s),
+          s.o0, s.o1, s.o2, s.o3, s.s0, s.s1, s.s2, s.s3, s.a, s.mouse
+        );
+        if (modId) delete _hydraErrors[modId];
+        var errEl = document.getElementById('hydra-err-' + modId);
+        if (errEl) { errEl.textContent = ''; errEl.classList.remove('visible'); }
+        var stEl = document.getElementById('hydra-st-' + modId);
+        if (stEl) stEl.textContent = 'Running \u2714';
+      } catch (e) {
+        if (modId) _hydraErrors[modId] = e.message;
+        var errEl2 = document.getElementById('hydra-err-' + modId);
+        if (errEl2) { errEl2.textContent = 'Error: ' + e.message; errEl2.classList.add('visible'); }
+        var stEl2 = document.getElementById('hydra-st-' + modId);
+        if (stEl2) stEl2.textContent = 'Error \u2717';
+      }
+    }
+
+    function drawHydra(g, am, b) {
+      if (!_hydraInst) return;
+      var hc = document.getElementById('hydra-canvas');
+      if (!hc) return;
+      var ctx = g.drawingContext;
+      ctx.save();
+      ctx.globalAlpha = b;
+      try { ctx.drawImage(hc, 0, 0, g.width, g.height); } catch (e) {}
+      ctx.restore();
+    }
+
     // MODULE DRAW FUNCTIONS
     // ═══════════════════════════════════════════════════════
     function BS(v) { return Math.min(100, v * params.brightness); }
@@ -3475,6 +3700,7 @@
         case 'lightningArc': drawLightningArc(g, am, bm, b); break;
         case 'orbitWeb': drawOrbitWeb(g, am, bm, b); break;
         case 'shapeMask': drawShapeMask(g, am, bm, b); break;
+        case 'hydra': drawHydra(g, am, b); break;
       }
       _activeModInst = null;
     }
@@ -4330,7 +4556,7 @@
       { src: 'fractureWeb', dst: 'kaleidoscope', style: 'kaleid', strength: 0.7 }
     ];
 
-    var MOD_KEYS = ['pinwheels', 'fractureWeb', 'lissajous', 'spirograph', 'particleStorm', 'kaleidoscope', 'moireGrid', 'pulseRings', 'chaosTunnel', 'noiseField', 'shapeMask'];
+    var MOD_KEYS = ['pinwheels', 'fractureWeb', 'lissajous', 'spirograph', 'particleStorm', 'kaleidoscope', 'moireGrid', 'pulseRings', 'chaosTunnel', 'noiseField', 'shapeMask', 'hydra'];
 
     // Off-screen buffers for chain rendering: one per module
     var chainBuffers = {}; // key -> p5.Graphics
@@ -4518,7 +4744,7 @@
       else pg.background(12, 12, 11);
       pg.colorMode(HSB, 360, 100, 100, 100);
 
-      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm', 'shapeMask'];
+      var drawOrder = ['noiseField', 'plasmaWave', 'moireGrid', 'orbitWeb', 'spirograph', 'lissajous', 'chaosTunnel', 'crystalWeb', 'kaleidoscope', 'bloomPetals', 'pinwheels', 'fractureWeb', 'lightningArc', 'pulseRings', 'particleStorm', 'hydra', 'shapeMask'];
       drawOrder.forEach(function (type) {
         params.moduleList.forEach(function (m) {
           if (m.type !== type || !m.on) return;

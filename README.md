@@ -1,6 +1,8 @@
-# Chromatic Vertigo — Chaos Engine
+# Chromatic Vertigo — Modular Visualizer
 
 A real-time generative art visualizer built as a single self-contained HTML file. Ten independently blendable visual modules run simultaneously on a p5.js canvas, all of them responsive to live microphone input and tunable through a dense but compact sidebar of controls. No build step, no dependencies to install — open the file in a browser and it runs.
+
+<video src='demo/chromatic-vertigo-demo.mp4' width=180/>
 
 ---
 
