@@ -2017,8 +2017,7 @@
       <!-- CHAIN MODE -->
       <div class="sec" id="chainModeSec" style="display:none">
         <h3>Chain <button class="rnd-btn" onclick="randomizeChain()" title="Randomize chain">🎲</button></h3>
-        <p style="font-size:10px;color:var(--mid);margin-bottom:10px;line-height:1.5">Each link routes one module's
-          output to modulate another's parameters. Modules not in a chain draw normally.</p>
+        <p style="font-size:10px;color:var(--mid);margin-bottom:10px;line-height:1.5">Each link applies the selected transform to the next module's rendered output, using the source's image as the modulator. Modules not in a chain draw normally.</p>
         <div id="chainList"></div>
         <button class="btn" onclick="addChainLink()" style="margin-top:4px">+ Add Link</button>
       </div>
@@ -4540,14 +4539,14 @@
 
     // Modulation styles with descriptions
     var CHAIN_STYLES = {
-      displace: { label: 'Displace', desc: 'Source brightness warps target geometry' },
-      mask: { label: 'Mask', desc: 'Source brightness gates target alpha' },
-      hueShift: { label: 'Hue Warp', desc: 'Source hue rotates target colors' },
-      scale: { label: 'Scale', desc: 'Source energy scales target size params' },
-      timeWarp: { label: 'Time Warp', desc: 'Source energy modulates target speed' },
-      kaleid: { label: 'Kaleid', desc: 'Source pixel data is kaleidoscoped before target draws' },
-      invert: { label: 'Invert', desc: 'Source inverts target color channels' },
-      ripple: { label: 'Ripple', desc: 'Source creates wave distortion in target' }
+      displace: { label: 'Displace', desc: 'Source image displaces the pixels of the next module\'s output' },
+      mask: { label: 'Mask', desc: 'Source brightness masks the next module\'s rendered output' },
+      hueShift: { label: 'Hue Warp', desc: 'Source average hue rotates the colors of the next module\'s output' },
+      scale: { label: 'Scale', desc: 'Source energy zooms the next module\'s rendered output' },
+      timeWarp: { label: 'Time Warp', desc: 'Source screens over the next module\'s output for a temporal blend' },
+      kaleid: { label: 'Kaleid', desc: 'Source energy drives kaleidoscope symmetry applied to next module\'s output' },
+      invert: { label: 'Invert', desc: 'Source image inverts the next module\'s output via difference blend' },
+      ripple: { label: 'Ripple', desc: 'Source brightness drives wave distortion across the next module\'s output' }
     };
 
     // Each link: {src, dst, style, strength}
@@ -4560,6 +4559,8 @@
 
     // Off-screen buffers for chain rendering: one per module
     var chainBuffers = {}; // key -> p5.Graphics
+    // Output buffers after chain transforms are applied
+    var chainTransformBuffers = {}; // key -> p5.Graphics
 
     function ensureChainBuffers() {
       MOD_KEYS.forEach(function (k) {
@@ -4601,87 +4602,164 @@
       };
     }
 
-    // Apply a chain modulation: use src signal to affect how dst is drawn
-    // Returns modified (temporary) module params snapshot
-    function applyChainMod(dstId, srcSig, style, strength) {
-      var base = getModById(dstId); if (!base) return null;
-      var mod = JSON.parse(JSON.stringify(base));
+    // Apply a chain transform: use src's rendered output to modulate dst's rendered output at the pixel/compositing level.
+    // The result is written into outBuf. dst's own params are never modified.
+    function applyChainTransform(srcBuf, dstBuf, outBuf, style, strength) {
+      var ctx = outBuf.drawingContext;
       var s = strength;
-      var bri = srcSig.brightness, en = srcSig.energy, hu = srcSig.avgHue;
+      var w = outBuf.width, h = outBuf.height;
+      var cx = w / 2, cy = h / 2;
+
+      // Clear output buffer
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.filter = 'none';
 
       switch (style) {
-        case 'displace':
-          // Boost chaos, warp, spread based on source brightness
-          if (mod.scale !== undefined) mod.scale = base.scale * (1 + bri * s * 4);
-          if (mod.warp !== undefined) mod.warp = base.warp * (1 + bri * s * 6);
-          if (mod.spreadAngle !== undefined) mod.spreadAngle = base.spreadAngle * (1 + bri * s * 3);
-          if (mod.noiseWarp !== undefined) mod.noiseWarp = Math.min(1, base.noiseWarp + bri * s * .8);
-          if (mod.orbitDrift !== undefined) mod.orbitDrift = Math.min(1, base.orbitDrift + bri * s);
-          if (mod.bladeSkew !== undefined) mod.bladeSkew = Math.min(1, bri * s);
+        case 'displace': {
+          // Use src image as a displacement map: each row of dst is shifted horizontally
+          // by an amount derived from that row's average color in src.
+          srcBuf.loadPixels();
+          var spx = srcBuf.pixels;
+          var maxD = Math.round(s * 80);
+          var samplePts = 8;
+          for (var row = 0; row < h; row++) {
+            var rowR = 0, rowG = 0;
+            for (var sp = 0; sp < samplePts; sp++) {
+              var sx2 = Math.floor(sp / samplePts * w);
+              var si = (row * w + sx2) * 4;
+              rowR += spx[si] / 255;
+              rowG += spx[si + 1] / 255;
+            }
+            rowR /= samplePts; rowG /= samplePts;
+            var dx = Math.round((rowR - 0.5) * maxD * 2);
+            var dy = Math.round((rowG - 0.5) * maxD * 0.5);
+            var destRow = Math.max(0, Math.min(h - 1, row + dy));
+            ctx.drawImage(dstBuf.elt, 0, row, w, 1, dx, destRow, w, 1);
+          }
           break;
+        }
 
-        case 'mask':
-          // Source brightness gates blend
-          mod.blend = base.blend * Math.max(0.05, (1 - en * s));
-          if (mod.fillOpacity !== undefined) mod.fillOpacity = base.fillOpacity * (1 - en * s * .5);
+        case 'mask': {
+          // src brightness masks dst's output: bright src = visible dst, dark src = transparent dst
+          ctx.drawImage(dstBuf.elt, 0, 0);
+          ctx.globalCompositeOperation = 'destination-in';
+          ctx.globalAlpha = s;
+          ctx.drawImage(srcBuf.elt, 0, 0);
+          // Restore a fraction of dst for the unmasked portion (1 - strength)
+          if (s < 1) {
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.globalAlpha = 1 - s;
+            ctx.drawImage(dstBuf.elt, 0, 0);
+          }
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = 1;
           break;
+        }
 
-        case 'hueShift':
-          // Rotate hue range by source avg hue offset
-          var shift = hu * s;
-          mod.hueRange = { start: (base.hueRange.start + shift) % 360, end: (base.hueRange.end + shift) % 360 };
-          if (mod.colorShift !== undefined) mod.colorShift = (base.colorShift + hu * s * .5) % 180;
+        case 'hueShift': {
+          // Rotate dst's output colors by src's average hue value
+          var sig = extractSignal(srcBuf);
+          var shift = (sig.avgHue * s * 2) % 360;
+          ctx.filter = 'hue-rotate(' + shift.toFixed(0) + 'deg)';
+          ctx.drawImage(dstBuf.elt, 0, 0);
+          ctx.filter = 'none';
           break;
+        }
 
-        case 'scale':
-          // Source energy enlarges/contracts size-related params
-          var sf = 1 + en * s * 2;
-          if (mod.wheelCount !== undefined) mod.wheelCount = Math.min(12, Math.max(1, Math.round(base.wheelCount * sf)));
-          if (mod.ringN !== undefined) mod.ringN = Math.min(30, Math.max(3, Math.round(base.ringN * sf)));
-          if (mod.depth !== undefined) mod.depth = Math.min(40, Math.max(4, Math.round(base.depth * sf)));
-          if (mod.segments !== undefined) mod.segments = Math.min(24, Math.max(2, Math.round(base.segments * sf)));
-          if (mod.gridSize !== undefined) mod.gridSize = Math.max(5, Math.round(base.gridSize / sf));
-          if (mod.ringCount !== undefined) mod.ringCount = Math.min(14, Math.max(2, Math.round(base.ringCount * sf)));
+        case 'scale': {
+          // Zoom dst's output based on src's energy
+          var sig = extractSignal(srcBuf);
+          var sf = 1 + sig.energy * s * 2;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(sf, sf);
+          ctx.drawImage(dstBuf.elt, -cx, -cy);
+          ctx.restore();
           break;
+        }
 
-        case 'timeWarp':
-          // Source energy drives speed/motion params
-          var tf = 1 + en * s * 4;
-          if (mod.phaseSpeed !== undefined) mod.phaseSpeed = base.phaseSpeed * tf;
-          if (mod.traceSpeed !== undefined) mod.traceSpeed = base.traceSpeed * tf;
-          if (mod.morphSpeed !== undefined) mod.morphSpeed = base.morphSpeed * tf;
-          if (mod.webSpin !== undefined) mod.webSpin = Math.min(1, base.webSpin * tf);
-          if (mod.rotSpeed !== undefined) mod.rotSpeed = Math.min(.05, base.rotSpeed * tf);
-          if (mod.turbulence !== undefined) mod.turbulence = Math.min(2, base.turbulence * tf);
-          if (mod.twist !== undefined) mod.twist = Math.min(4, base.twist * tf);
+        case 'timeWarp': {
+          // Screen src over dst for a temporal double-exposure effect
+          ctx.drawImage(dstBuf.elt, 0, 0);
+          ctx.globalCompositeOperation = 'screen';
+          ctx.globalAlpha = s * 0.7;
+          ctx.drawImage(srcBuf.elt, 0, 0);
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = 1;
           break;
+        }
 
-        case 'kaleid':
-          // Use source energy to multiply symmetry segments
-          var ks = Math.max(2, Math.round(2 + en * s * 10));
-          if (mod.segments !== undefined) mod.segments = Math.min(24, ks);
-          if (mod.bladeCount !== undefined) mod.bladeCount = Math.min(20, Math.max(3, Math.round(base.bladeCount * (1 + en * s))));
-          if (mod.cornerBase !== undefined) mod.cornerBase = Math.min(12, Math.max(3, ks));
-          if (mod.ringCount !== undefined) mod.ringCount = Math.min(14, Math.max(2, Math.round(base.ringCount * (1 + en * s * .5))));
+        case 'kaleid': {
+          // Apply kaleidoscope symmetry to dst's output; src energy drives segment count
+          var sig = extractSignal(srcBuf);
+          var segs = Math.max(2, Math.round(3 + sig.energy * s * 10));
+          applyKaleidTransform(dstBuf, outBuf, segs);
           break;
+        }
 
-        case 'invert':
-          // Invert hue range
-          mod.hueRange = { start: (base.hueRange.start + 180) % 360, end: (base.hueRange.end + 180) % 360 };
-          if (mod.altColoring !== undefined) mod.altColoring = en > 0.3 ? 1 - base.altColoring : base.altColoring;
+        case 'invert': {
+          // Difference blend: where src is bright, dst colors are inverted; dark src = unchanged dst
+          ctx.drawImage(dstBuf.elt, 0, 0);
+          ctx.globalCompositeOperation = 'difference';
+          ctx.globalAlpha = s;
+          ctx.drawImage(srcBuf.elt, 0, 0);
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = 1;
           break;
+        }
 
-        case 'ripple':
-          // Source creates pulsing distortion
-          var rp = bri * s;
-          if (mod.noiseWarp !== undefined) mod.noiseWarp = Math.min(1, base.noiseWarp + rp * .6);
-          if (mod.warp !== undefined) mod.warp = Math.min(4, base.warp * (1 + rp * 3));
-          if (mod.thickness !== undefined) mod.thickness = Math.min(5, base.thickness * (1 + rp * 2));
-          if (mod.spreadAngle !== undefined) mod.spreadAngle = Math.min(2, base.spreadAngle * (1 + rp * 2));
-          if (mod.turbulence !== undefined) mod.turbulence = Math.min(2, base.turbulence + rp);
+        case 'ripple': {
+          // Sine-wave horizontal displacement across dst's output; src brightness drives amplitude
+          var sig = extractSignal(srcBuf);
+          var amp = sig.brightness * s * 60;
+          var freq = 6 + sig.energy * 4;
+          var strips = Math.min(h, 80);
+          var stripH = h / strips;
+          for (var i = 0; i < strips; i++) {
+            var sy = i * stripH;
+            var sh = Math.ceil(stripH);
+            var offset = Math.round(Math.sin(i / strips * Math.PI * freq + fc * 0.04) * amp);
+            ctx.drawImage(dstBuf.elt, 0, sy, w, sh, offset, sy, w, sh);
+          }
           break;
+        }
+
+        default:
+          ctx.drawImage(dstBuf.elt, 0, 0);
       }
-      return mod;
+    }
+
+    // Kaleidoscope transform: tile dst into segs wedge segments, alternating mirrored, around center
+    function applyKaleidTransform(srcBuf, outBuf, segs) {
+      var ctx = outBuf.drawingContext;
+      var w = srcBuf.width, h = srcBuf.height;
+      var cx = w / 2, cy = h / 2;
+      var sliceAngle = Math.PI * 2 / segs;
+      var r = Math.sqrt(cx * cx + cy * cy) * 1.5;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      for (var i = 0; i < segs; i++) {
+        ctx.save();
+        ctx.rotate(i * sliceAngle);
+        // Clip to wedge
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        var wedgeSteps = 16;
+        for (var j = 0; j <= wedgeSteps; j++) {
+          var a = -sliceAngle / 2 + j * sliceAngle / wedgeSteps;
+          ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        }
+        ctx.closePath();
+        ctx.clip();
+        // Mirror alternate segments for symmetry
+        if (i % 2 === 1) ctx.scale(1, -1);
+        ctx.drawImage(srcBuf.elt, -cx, -cy);
+        ctx.restore();
+      }
+      ctx.restore();
     }
 
     // Draw a single module instance using potentially-overridden params (chain mode)
@@ -4705,21 +4783,20 @@
       // Build a unique id list of active instances
       var activeIds = params.moduleList.filter(function (m) { return m.on; }).map(function (m) { return m.id; });
 
-      // Ensure per-instance chain buffers
+      // Ensure per-instance render buffers and transform output buffers for all active modules
       activeIds.forEach(function (id) {
         if (!chainBuffers[id] || chainBuffers[id].width !== width) {
           chainBuffers[id] = createGraphics(width, height);
           chainBuffers[id].colorMode(HSB, 360, 100, 100, 100);
         }
+        if (!chainTransformBuffers[id] || chainTransformBuffers[id].width !== width) {
+          chainTransformBuffers[id] = createGraphics(width, height);
+          chainTransformBuffers[id].colorMode(HSB, 360, 100, 100, 100);
+        }
       });
 
-      // Build source/dest maps
-      var isSource = {}, isDest = {};
-      chainLinks.forEach(function (lnk) { isSource[lnk.src] = true; isDest[lnk.dst] = true; });
-
-      // First pass: render sources into their buffers
+      // First pass: render ALL active modules into their own buffers using their own params
       activeIds.forEach(function (id) {
-        if (!isSource[id]) return;
         chainBuffers[id].colorMode(RGB);
         chainBuffers[id].background(0, 0, 0, 0);
         chainBuffers[id].colorMode(HSB, 360, 100, 100, 100);
@@ -4727,18 +4804,26 @@
         drawModuleInstance(m, chainBuffers[id], am, bm, mm);
       });
 
-      // Second pass: extract signals and compute overrides
-      var dstOverrides = {};
+      // Build destination set
+      var isDest = {};
+      chainLinks.forEach(function (lnk) { isDest[lnk.dst] = true; });
+
+      // Second pass: apply chain transforms at the output/compositing level
+      // The selected transform of the source modulates the destination's rendered output
       chainLinks.forEach(function (lnk) {
         var srcM = getModById(lnk.src), dstM = getModById(lnk.dst);
         if (!srcM || !dstM || !srcM.on || !dstM.on) return;
-        if (!chainBuffers[lnk.src]) return;
-        var sig = extractSignal(chainBuffers[lnk.src]);
-        var modParams = applyChainMod(lnk.dst, sig, lnk.style, lnk.strength);
-        if (modParams) dstOverrides[lnk.dst] = modParams;
+        if (!chainBuffers[lnk.src] || !chainBuffers[lnk.dst]) return;
+        applyChainTransform(
+          chainBuffers[lnk.src],
+          chainBuffers[lnk.dst],
+          chainTransformBuffers[lnk.dst],
+          lnk.style,
+          lnk.strength
+        );
       });
 
-      // Third pass: draw all to pg
+      // Third pass: composite everything onto pg
       pg.colorMode(RGB);
       if (params.persist > .01) { pg.fill(12, 12, 11, 255 * (1 - params.persist)); pg.noStroke(); pg.rect(0, 0, width, height); }
       else pg.background(12, 12, 11);
@@ -4749,12 +4834,9 @@
         params.moduleList.forEach(function (m) {
           if (m.type !== type || !m.on) return;
           var id = m.id;
-          if (isSource[id] && !isDest[id]) {
-            pg.push(); pg.drawingContext.globalAlpha = m.blend; pg.image(chainBuffers[id], 0, 0); pg.drawingContext.globalAlpha = 1; pg.pop();
-          } else {
-            var ov = dstOverrides[id] || null;
-            drawModule(id, pg, am, bm, mm, m.blend, ov);
-          }
+          // Use the transform output buffer if this module is a chain destination, otherwise use the raw render buffer
+          var buf = isDest[id] ? chainTransformBuffers[id] : chainBuffers[id];
+          pg.push(); pg.drawingContext.globalAlpha = m.blend; pg.image(buf, 0, 0); pg.drawingContext.globalAlpha = 1; pg.pop();
         });
       });
     }
@@ -5011,6 +5093,7 @@
       pg = createGraphics(w, h);
       pg.colorMode(HSB, 360, 100, 100, 100);
       chainBuffers = {};
+      chainTransformBuffers = {};
       initFxBuffers();
       var fftC = document.getElementById('fftCanvas');
       if (fftC) { fftC.width = w; fftCtx = null; }
