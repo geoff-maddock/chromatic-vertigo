@@ -1,8 +1,375 @@
 {
   "app": "ChromaticVertigo",
   "version": 1,
-  "exportedAt": "2026-03-11T17:17:49.505Z",
+  "exportedAt": "2026-03-11T21:04:14.784Z",
   "presets": [
+    {
+      "name": "celtic-maze",
+      "savedAt": 1773252286506,
+      "params": {
+        "seed": 714078,
+        "spinSpeed": 0.012,
+        "audioReact": 0.4,
+        "hueSpeed": 0.2,
+        "chaos": 0.02,
+        "persist": 0.09,
+        "brightness": 0.7,
+        "saturation": 0.7,
+        "fxEchoOn": false,
+        "fxEchoCount": 4,
+        "fxEchoDecay": 0.7,
+        "fxEchoScale": 0.98,
+        "fxEchoRotate": 0.01,
+        "fxEchoHueDrift": 0,
+        "fxFeedbackOn": false,
+        "fxFeedbackAmount": 0.85,
+        "fxFeedbackZoom": 1.01,
+        "fxFeedbackRotate": 0.005,
+        "fxFeedbackHue": 0,
+        "fxAberrationOn": false,
+        "fxAberrationAmount": 10,
+        "fxAberrationAngle": 0,
+        "fxGlitchRate": 0.03,
+        "fxGlitchIntensity": 0.5,
+        "fxGlitchHeight": 0.08,
+        "fxMirrorOn": false,
+        "fxMirrorSegments": 6,
+        "fxMirrorAngle": 0,
+        "fxMirrorBlend": 1,
+        "fxMirrorZoom": 1,
+        "fxWarpOn": false,
+        "fxWarpAmount": 20,
+        "fxWarpScale": 0.005,
+        "fxWarpSpeed": 1,
+        "fxWarpTwirl": 0,
+        "fxWarpReact": 0.5,
+        "hueRange": {
+          "start": 99,
+          "end": 346
+        },
+        "moduleList": [
+          {
+            "on": true,
+            "blend": 0.914,
+            "R": 0.25,
+            "r": 0.4,
+            "d": 0.35,
+            "passes": 2,
+            "traceSpeed": 2.6,
+            "strokeW": 1,
+            "fill": false,
+            "type": "spirograph",
+            "id": "spirograph_56",
+            "hueRange": {
+              "start": 281,
+              "end": 215
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "AMSynth",
+              "scale": "Dorian",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.15,
+              "reverbSend": 0.4,
+              "bpmOffset": 0,
+              "bindings": {
+                "traceSpeed": "rhythmic",
+                "R": "continuous",
+                "r": "off",
+                "d": "off",
+                "passes": "melodic",
+                "__beat__": "off",
+                "__activity__": "off"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.3874,
+            "wheelCount": 2,
+            "bladeCount": 5,
+            "ringCount": 10,
+            "counterRotate": false,
+            "orbitDrift": 0.85,
+            "bladeSkew": 0.2,
+            "hubGlow": 1,
+            "altColoring": 0.05,
+            "type": "pinwheels",
+            "id": "pinwheels_57",
+            "hueRange": {
+              "start": 319,
+              "end": 48
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "PolySynth",
+              "scale": "Pentatonic Major",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.12,
+              "reverbSend": 0.3,
+              "bpmOffset": 0,
+              "bindings": {
+                "ringCount": "continuous",
+                "bladeCount": "melodic",
+                "wheelCount": "off",
+                "__beat__": "rhythmic",
+                "__activity__": "off"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.7061,
+            "scaleA": 6.1,
+            "scaleB": 1.1,
+            "scaleC": 4.3,
+            "speed": 3.4,
+            "complexity": 6,
+            "pixelSize": 12,
+            "contrast": 0.6,
+            "type": "plasmaWave",
+            "id": "plasmaWave_58",
+            "hueRange": {
+              "start": 340,
+              "end": 192
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "AMSynth",
+              "scale": "Lydian",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.18,
+              "reverbSend": 0.4,
+              "bpmOffset": 0,
+              "bindings": {
+                "speed": "continuous",
+                "scaleA": "melodic",
+                "scaleB": "off",
+                "scaleC": "off",
+                "__beat__": "off",
+                "__activity__": "off"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.6571,
+            "count": 450,
+            "turbulence": 1.2,
+            "trailLen": 14,
+            "gravity": 0,
+            "attractMode": false,
+            "spawnEdge": false,
+            "type": "particleStorm",
+            "id": "particleStorm_59",
+            "hueRange": {
+              "start": 356,
+              "end": 164
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "PolySynth",
+              "scale": "Chromatic",
+              "octave": 5,
+              "octaveRange": 2,
+              "volume": -0.2,
+              "reverbSend": 0.35,
+              "bpmOffset": 0,
+              "bindings": {
+                "turbulence": "continuous",
+                "count": "off",
+                "trailLen": "off",
+                "gravity": "melodic",
+                "__beat__": "rhythmic",
+                "__activity__": "off"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "monoid-field",
+      "savedAt": 1773251426752,
+      "params": {
+        "seed": 561560,
+        "spinSpeed": 0.021,
+        "audioReact": 0.6,
+        "hueSpeed": 2.4,
+        "chaos": 0.18,
+        "persist": 0.43,
+        "brightness": 0.55,
+        "saturation": 0,
+        "fxEchoOn": false,
+        "fxEchoCount": 4,
+        "fxEchoDecay": 0.7,
+        "fxEchoScale": 0.98,
+        "fxEchoRotate": 0.01,
+        "fxEchoHueDrift": 0,
+        "fxFeedbackOn": false,
+        "fxFeedbackAmount": 0.85,
+        "fxFeedbackZoom": 1.01,
+        "fxFeedbackRotate": 0.005,
+        "fxFeedbackHue": 0,
+        "fxAberrationOn": false,
+        "fxAberrationAmount": 10,
+        "fxAberrationAngle": 0,
+        "fxGlitchRate": 0.03,
+        "fxGlitchIntensity": 0.5,
+        "fxGlitchHeight": 0.08,
+        "fxMirrorOn": false,
+        "fxMirrorSegments": 6,
+        "fxMirrorAngle": 0,
+        "fxMirrorBlend": 1,
+        "fxMirrorZoom": 1,
+        "fxWarpOn": false,
+        "fxWarpAmount": 20,
+        "fxWarpScale": 0.005,
+        "fxWarpSpeed": 1,
+        "fxWarpTwirl": 0,
+        "fxWarpReact": 0.5,
+        "hueRange": {
+          "start": 224,
+          "end": 14
+        },
+        "moduleList": [
+          {
+            "on": true,
+            "blend": 0.8914,
+            "scale": 0.011,
+            "warp": 0.1,
+            "step": 30,
+            "arrowLen": 1.15,
+            "curl": true,
+            "colorMode": 3,
+            "type": "noiseField",
+            "id": "noiseField_165",
+            "hueRange": {
+              "start": 345,
+              "end": 261
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "NoiseSynth",
+              "scale": "Pentatonic Major",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.22,
+              "reverbSend": 0.5,
+              "bpmOffset": 0,
+              "bindings": {
+                "warp": "continuous",
+                "scale": "off",
+                "step": "off",
+                "arrowLen": "off",
+                "__beat__": "off",
+                "__activity__": "continuous"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.7909,
+            "wheelCount": 6,
+            "bladeCount": 4,
+            "ringCount": 7,
+            "counterRotate": false,
+            "orbitDrift": 0.45,
+            "bladeSkew": 0.25,
+            "hubGlow": 0.05,
+            "altColoring": 0.75,
+            "type": "pinwheels",
+            "id": "pinwheels_166",
+            "hueRange": {
+              "start": 156,
+              "end": 351
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "PolySynth",
+              "scale": "Pentatonic Major",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.12,
+              "reverbSend": 0.3,
+              "bpmOffset": 0,
+              "bindings": {
+                "ringCount": "continuous",
+                "bladeCount": "melodic",
+                "wheelCount": "off",
+                "__beat__": "rhythmic",
+                "__activity__": "off"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 0.961,
+            "code": "osc(40,0.09,0.9).color(0.9,0,1).rotate(0.2,0.05).kaleid(3).blend(o0,0.95).out(o0)",
+            "type": "hydra",
+            "id": "hydra_167",
+            "hueRange": {
+              "start": 251,
+              "end": 140
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "PolySynth",
+              "scale": "Pentatonic Major",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.15,
+              "reverbSend": 0.35,
+              "bpmOffset": 0,
+              "bindings": {
+                "__beat__": "off",
+                "__activity__": "off"
+              }
+            }
+          },
+          {
+            "on": true,
+            "blend": 1,
+            "count": 3,
+            "shapeType": 0,
+            "size": 0.28,
+            "variety": 0.3,
+            "scatter": 0.55,
+            "rotation": 0,
+            "polyFaces": 6,
+            "splatPoints": 7,
+            "splatiness": 0.45,
+            "feather": 0,
+            "invert": false,
+            "animate": false,
+            "animSpeed": 1,
+            "type": "shapeMask",
+            "id": "shapeMask_168",
+            "hueRange": {
+              "start": 0,
+              "end": 360
+            },
+            "sound": {
+              "enabled": false,
+              "instrument": "PolySynth",
+              "scale": "Pentatonic Major",
+              "octave": 4,
+              "octaveRange": 2,
+              "volume": -0.15,
+              "reverbSend": 0.35,
+              "bpmOffset": 0,
+              "bindings": {
+                "__beat__": "off",
+                "__activity__": "off"
+              }
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "space-hub",
       "savedAt": 1773174115864,
