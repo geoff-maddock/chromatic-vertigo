@@ -764,6 +764,19 @@
       background: #fff8f5;
     }
 
+    .mod-chev {
+      font-size: 11px;
+      color: var(--mid);
+      flex-shrink: 0;
+      display: inline-block;
+      transition: transform .15s;
+      line-height: 1;
+    }
+
+    .mod-card.expanded .mod-chev {
+      transform: rotate(90deg);
+    }
+
     .mod-name {
       font-size: 11px;
       font-weight: 600;
@@ -808,7 +821,7 @@
       display: none;
     }
 
-    .mod-card.active .mod-body {
+    .mod-card.expanded .mod-body {
       display: block;
     }
 
@@ -2722,10 +2735,11 @@
         var instLabel = sameType.length > 1 ? ' #' + instNum : '';
 
         var card = document.createElement('div');
-        card.className = 'mod-card' + (m.on ? ' active' : ''); card.id = 'card-' + id;
+        card.className = 'mod-card' + (m.on ? ' active' : '') + (m.on ? ' expanded' : ''); card.id = 'card-' + id;
 
         // Header
         var head = '<div class="mod-head" onclick="expandMod(\'' + id + '\')">';
+        head += '<span class="mod-chev" id="chev-' + id + '">›</span>';
         head += '<span class="mod-name">' + spec.label + instLabel + '</span>';
         head += '<button class="mod-toggle' + (m.on ? ' on' : '') + '" id="tog-' + id + '" onclick="event.stopPropagation();toggleMod(\'' + id + '\')"></button>';
         head += '</div>';
@@ -2855,9 +2869,9 @@
       params.moduleList.push(inst);
       if (type === 'pinwheels' || type === 'particleStorm') doInitSys();
       buildModUI();
-      // Auto-open the new card
+      // Auto-expand the new card
       var card = document.getElementById('card-' + inst.id);
-      if (card) { var body = card.querySelector('.mod-body'); if (body) body.style.display = 'block'; }
+      if (card) card.classList.add('expanded');
     }
 
     function duplicateMod(id) {
@@ -2869,7 +2883,7 @@
       if (inst.type === 'pinwheels' || inst.type === 'particleStorm') doInitSys();
       buildModUI();
       var card = document.getElementById('card-' + inst.id);
-      if (card) { var body = card.querySelector('.mod-body'); if (body) body.style.display = 'block'; }
+      if (card) card.classList.add('expanded');
     }
 
     function deleteMod(id) {
@@ -2884,15 +2898,19 @@
 
     function expandMod(id) {
       var card = document.getElementById('card-' + id); if (!card) return;
-      var body = card.querySelector('.mod-body');
-      if (body) { body.style.display = (body.style.display === 'block') ? 'none' : 'block'; }
+      card.classList.toggle('expanded');
     }
 
     function toggleMod(id) {
       var m = getModById(id); if (!m) return;
       m.on = !m.on;
       var tog = document.getElementById('tog-' + id); if (tog) tog.classList.toggle('on');
-      var card = document.getElementById('card-' + id); if (card) card.classList.toggle('active');
+      var card = document.getElementById('card-' + id);
+      if (card) {
+        card.classList.toggle('active', m.on);
+        // Auto-expand when enabling so parameters are immediately visible
+        if (m.on) card.classList.add('expanded');
+      }
       if (m.type === 'pinwheels' || m.type === 'particleStorm') doInitSys();
       if (m.type === 'hydra' && m.on && m.code) { initHydra(); applyHydraCode(m.code, id); }
     }
@@ -3051,7 +3069,7 @@
       buildModUI();
       if (k === 'pinwheels' || k === 'particleStorm') doInitSys();
       var card = document.getElementById('card-' + id);
-      if (card) { var body = card.querySelector('.mod-body'); if (body) body.style.display = 'block'; }
+      if (card) card.classList.add('expanded');
     }
 
     function resetMod(id) {
