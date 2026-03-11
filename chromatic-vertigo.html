@@ -162,7 +162,7 @@
     .sidebar-drag {
       position: absolute;
       top: 0;
-      right: -5px;
+      left: -5px;
       bottom: 0;
       width: 10px;
       cursor: col-resize;
@@ -1706,16 +1706,228 @@
     #sizeBadge.visible {
       opacity: 1;
     }
+
+    /* ── Three-panel desktop layout ── */
+    /* Fix visual order: left panel | canvas | right sidebar */
+    .canvas-area { order: 2; }
+    .sidebar     { order: 3; }
+
+    .panel-left {
+      order: 1;
+      width: 240px;
+      min-width: 180px;
+      max-width: 380px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, .97);
+      backdrop-filter: blur(10px);
+      padding: 14px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(20, 20, 19, .1);
+      overflow-y: auto;
+      overflow-x: hidden;
+      max-height: calc(100vh - 28px);
+      position: relative;
+    }
+
+    .panel-left h1 {
+      font-family: 'Lora', serif;
+      font-size: 17px;
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+
+    /* Left panel drag handle (on right edge) */
+    .panel-left-drag {
+      position: absolute;
+      top: 0;
+      right: -5px;
+      bottom: 0;
+      width: 10px;
+      cursor: col-resize;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .panel-left-drag-bar {
+      width: 3px;
+      height: 36px;
+      background: var(--lgray);
+      border-radius: 2px;
+      transition: background .15s, height .15s, opacity .2s;
+      opacity: 0;
+    }
+
+    .panel-left:hover .panel-left-drag-bar,
+    .panel-left-drag.dragging .panel-left-drag-bar {
+      opacity: 1;
+    }
+
+    .panel-left-drag:hover .panel-left-drag-bar,
+    .panel-left-drag.dragging .panel-left-drag-bar {
+      background: var(--orange) !important;
+      height: 72px;
+    }
+
+    /* Module bank grid */
+    .bank-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding-bottom: 4px;
+    }
+
+    .bank-card {
+      padding: 6px 8px;
+      border: 1.5px solid var(--lgray);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      background: white;
+      color: var(--dark);
+      transition: all .12s;
+      text-align: center;
+      user-select: none;
+      line-height: 1.3;
+    }
+
+    .bank-card:hover {
+      border-color: var(--orange);
+      background: #fff4f0;
+      color: var(--orange);
+    }
+
+    .bank-card.bank-active {
+      border-color: var(--green);
+      background: #f2f7ec;
+      color: var(--green);
+    }
+
+    /* Randomize & Morph section */
+    .rando-big {
+      width: 100%;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--orange);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .15s;
+      margin-bottom: 6px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .rando-big:hover {
+      background: #c86744;
+      transform: translateY(-1px);
+    }
+
+    .morph-section {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #faf9f7;
+      border: 1px solid var(--lgray);
+      border-radius: 8px;
+    }
+
+    .morph-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .morph-target-chips {
+      display: flex;
+      gap: 4px;
+      margin-top: 3px;
+    }
+
+    .morph-chip {
+      padding: 3px 8px;
+      border: 1.5px solid var(--lgray);
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      background: white;
+      color: var(--mid);
+      transition: all .12s;
+      user-select: none;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .morph-chip.active {
+      border-color: var(--orange);
+      background: #fff4f0;
+      color: var(--orange);
+    }
+
+    .morph-chip:hover:not(.active) {
+      border-color: #c0beb5;
+      color: var(--dark);
+    }
+
+    /* Sidebar right-panel label */
+    .panel-right-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--mid);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 10px;
+    }
+
+    /* Responsive: hide left panel on narrow screens */
+    @media (max-width: 1080px) {
+      .panel-left {
+        display: none;
+      }
+    }
   </style>
 
 <body>
   <div class="container">
-    <div class="sidebar">
-      <h1>Chromatic Vertigo</h1>
-      <p class="subtitle">10 chaos modules · audio-reactive · fully controllable</p>
-      <div class="mode-toggle-bar">
-        <button class="mode-btn active" id="modeLayer" onclick="setMode('layer')">⊞ Layer</button>
-        <button class="mode-btn" id="modeChain" onclick="setMode('chain')">⛓ Chain</button>
+    <div class="sidebar" id="panelRight">
+      <p class="panel-right-title">Controls</p>
+
+      <!-- RANDOMIZE & MORPH -->
+      <div class="sec" id="randMorphSec">
+        <h3>Randomize &amp; Morph</h3>
+        <button class="rando-big" onclick="randomizeEverything()">🎲 Randomize Everything</button>
+        <div class="g2">
+          <button class="btn sml" onclick="randomizeGlobal()">↺ Global Params</button>
+          <button class="btn sml" onclick="randomizeAllMods()">↺ All Modules</button>
+        </div>
+        <div class="morph-section">
+          <div class="morph-head">
+            <span>Auto-Morph <span id="morphStatus" style="color:var(--orange);font-weight:700"></span></span>
+            <button class="btn sml" id="morphToggleBtn" onclick="toggleAutoMorph()">▶ Start</button>
+          </div>
+          <div class="cg">
+            <label>Speed</label>
+            <div class="srow"><input type="range" id="morphSpeed" min="2" max="60" step="1" value="10" oninput="setMorphSpeed(+this.value)"><span class="val" id="morphSpeed-v">10s</span></div>
+          </div>
+          <div class="cg">
+            <label>Amount</label>
+            <div class="srow"><input type="range" id="morphAmount" min="0.05" max="1" step="0.05" value="0.5" oninput="setMorphAmount(+this.value)"><span class="val" id="morphAmount-v">0.50</span></div>
+          </div>
+          <div class="cg">
+            <label>Target</label>
+            <div class="morph-target-chips">
+              <button class="morph-chip active" id="morphTargetGlobal" onclick="setMorphTarget('global')">Global</button>
+              <button class="morph-chip" id="morphTargetMods" onclick="setMorphTarget('mods')">Modules</button>
+              <button class="morph-chip" id="morphTargetAll" onclick="setMorphTarget('all')">Both</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- AUDIO -->
@@ -2008,21 +2220,6 @@
 
       </div>
 
-      <!-- MODULES (layer mode) -->
-      <div class="sec" id="layerModeSec">
-        <h3>Modules <button class="rnd-btn" onclick="randomizeAllMods()" title="Randomize all module params">🎲</button>
-        </h3>
-        <div class="modules" id="modList"></div>
-      </div>
-
-      <!-- CHAIN MODE -->
-      <div class="sec" id="chainModeSec" style="display:none">
-        <h3>Chain <button class="rnd-btn" onclick="randomizeChain()" title="Randomize chain">🎲</button></h3>
-        <p style="font-size:10px;color:var(--mid);margin-bottom:10px;line-height:1.5">Each link applies the selected transform to the next module's rendered output, using the source's image as the modulator. Modules not in a chain draw normally.</p>
-        <div id="chainList"></div>
-        <button class="btn" onclick="addChainLink()" style="margin-top:4px">+ Add Link</button>
-      </div>
-
       <!-- PRESETS -->
       <div class="sec">
         <h3>Presets</h3>
@@ -2065,6 +2262,37 @@
         <div class="g2"><button class="btn" onclick="doResetAll()">↺ Reset All</button><button class="btn"
             onclick="doSave()">💾 Save PNG</button></div>
         <button class="btn" onclick="randomizeEverything()">🎲 Randomize Everything</button>
+      </div>
+    </div>
+
+    <!-- LEFT PANEL: Module Bank & Active Modules -->
+    <div class="panel-left" id="panelLeft">
+      <h1>Chromatic Vertigo</h1>
+      <p class="subtitle">Module bank &amp; active layers</p>
+
+      <div class="mode-toggle-bar">
+        <button class="mode-btn active" id="modeLayer" onclick="setMode('layer')">⊞ Layer</button>
+        <button class="mode-btn" id="modeChain" onclick="setMode('chain')">⛓ Chain</button>
+      </div>
+
+      <!-- Module Bank: click to add -->
+      <div class="sec" id="moduleBankSec">
+        <h3>Add Module</h3>
+        <div class="bank-grid" id="bankGrid"></div>
+      </div>
+
+      <!-- Active Modules (layer mode) -->
+      <div class="sec" id="layerModeSec">
+        <h3>Modules <button class="rnd-btn" onclick="randomizeAllMods()" title="Randomize all module params">🎲</button></h3>
+        <div class="modules" id="modList"></div>
+      </div>
+
+      <!-- Chain mode -->
+      <div class="sec" id="chainModeSec" style="display:none">
+        <h3>Chain <button class="rnd-btn" onclick="randomizeChain()" title="Randomize chain">🎲</button></h3>
+        <p style="font-size:10px;color:var(--mid);margin-bottom:10px;line-height:1.5">Each link applies the selected transform to the next module's rendered output. Modules not in a chain draw normally.</p>
+        <div id="chainList"></div>
+        <button class="btn" onclick="addChainLink()" style="margin-top:4px">+ Add Link</button>
       </div>
     </div>
 
@@ -2838,6 +3066,8 @@
         // Sound panel — injected after the aov section
         buildModSoundUI(m);
       });
+      // Refresh module bank highlight state
+      buildBankUI();
     }
 
     function hydraRunCode(id) {
@@ -3122,6 +3352,115 @@
     }
 
     // ═══════════════════════════════════════════════════════
+    // MODULE BANK
+    // ═══════════════════════════════════════════════════════
+
+    function buildBankUI() {
+      var grid = document.getElementById('bankGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      var activeTypes = {};
+      params.moduleList.forEach(function (m) { if (m.on) activeTypes[m.type] = true; });
+      Object.keys(MOD_SPECS).forEach(function (type) {
+        var spec = MOD_SPECS[type];
+        var card = document.createElement('div');
+        card.className = 'bank-card' + (activeTypes[type] ? ' bank-active' : '');
+        card.title = 'Add ' + spec.label;
+        card.textContent = spec.label;
+        card.onclick = (function (t) { return function () { addModInstance(t); }; })(type);
+        grid.appendChild(card);
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // AUTO-MORPH
+    // ═══════════════════════════════════════════════════════
+
+    var autoMorphOn = false;
+    var _morphTimer = null;
+    var morphSpeedVal = 10;
+    var morphAmountVal = 0.5;
+    var morphTargetVal = 'global';
+
+    function setMorphSpeed(v) {
+      morphSpeedVal = v;
+      var el = document.getElementById('morphSpeed-v');
+      if (el) el.textContent = v + 's';
+      if (autoMorphOn) {
+        clearInterval(_morphTimer);
+        _morphTimer = setInterval(doAutoMorph, morphSpeedVal * 1000);
+      }
+    }
+
+    function setMorphAmount(v) {
+      morphAmountVal = v;
+      var el = document.getElementById('morphAmount-v');
+      if (el) el.textContent = v.toFixed(2);
+    }
+
+    function setMorphTarget(t) {
+      morphTargetVal = t;
+      ['global', 'mods', 'all'].forEach(function (x) {
+        var key = x === 'global' ? 'morphTargetGlobal' : x === 'mods' ? 'morphTargetMods' : 'morphTargetAll';
+        var el = document.getElementById(key);
+        if (el) el.classList.toggle('active', x === t);
+      });
+    }
+
+    function toggleAutoMorph() {
+      autoMorphOn = !autoMorphOn;
+      var btn = document.getElementById('morphToggleBtn');
+      var status = document.getElementById('morphStatus');
+      if (autoMorphOn) {
+        _morphTimer = setInterval(doAutoMorph, morphSpeedVal * 1000);
+        if (btn) { btn.textContent = '⏸ Stop'; btn.style.borderColor = 'var(--orange)'; btn.style.color = 'var(--orange)'; }
+        if (status) status.textContent = '● Live';
+      } else {
+        clearInterval(_morphTimer); _morphTimer = null;
+        if (btn) { btn.textContent = '▶ Start'; btn.style.borderColor = ''; btn.style.color = ''; }
+        if (status) status.textContent = '';
+      }
+    }
+
+    function doAutoMorph() {
+      var amt = morphAmountVal;
+      if (amt < 0.01) return;
+      var gRanges = { spinSpeed: [.001, .05], audioReact: [0, 5], hueSpeed: [0, 4], chaos: [0, 1], persist: [0, .9], brightness: [.4, 1.5], saturation: [0, 1.5] };
+      var gSpecs = { spinSpeed: .001, audioReact: .1, hueSpeed: .1, chaos: .01, persist: .01, brightness: .05, saturation: .05 };
+      if (morphTargetVal === 'global' || morphTargetVal === 'all') {
+        Object.keys(gRanges).forEach(function (k) {
+          var r = gRanges[k], step = gSpecs[k];
+          var target = r[0] + Math.random() * (r[1] - r[0]);
+          var cur = params[k];
+          var nv = cur + (target - cur) * amt;
+          nv = Math.round(nv / step) * step;
+          nv = Math.max(r[0], Math.min(r[1], nv));
+          params[k] = nv;
+          var el = document.getElementById(k); if (el) el.value = nv;
+          var vel = document.getElementById(k + '-v'); if (vel) vel.textContent = fmtV(nv);
+        });
+      }
+      if (morphTargetVal === 'mods' || morphTargetVal === 'all') {
+        params.moduleList.forEach(function (m) {
+          if (!m.on) return;
+          var spec = MOD_SPECS[m.type];
+          if (!spec || !spec.params) return;
+          spec.params.forEach(function (p) {
+            var target = p[2] + Math.random() * (p[3] - p[2]);
+            var cur = m[p[0]] !== undefined ? m[p[0]] : p[5];
+            var nv = cur + (target - cur) * amt;
+            nv = Math.round(nv / p[4]) * p[4];
+            nv = Math.max(p[2], Math.min(p[3], nv));
+            m[p[0]] = nv;
+            var pid = m.id + '__' + p[0];
+            var el = document.getElementById(pid); if (el) el.value = nv;
+            var vel = document.getElementById(pid + '-v'); if (vel) vel.textContent = fmtV(nv);
+          });
+        });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
     // STATE
     // ═══════════════════════════════════════════════════════
     var globalHue = 0, fc = 0, pg;
@@ -3262,7 +3601,8 @@
     // P5 SETUP & DRAW
     // ═══════════════════════════════════════════════════════
     function setup() {
-      var sz = min(windowWidth - 330, windowHeight - 28, 820);
+      var totalPanels = (windowWidth >= 1080 ? 580 : 330);
+      var sz = min(windowWidth - totalPanels, windowHeight - 28, 820);
       var cv = createCanvas(sz, sz); cv.parent('cc');
       colorMode(HSB, 360, 100, 100, 100);
       pg = createGraphics(sz, sz); pg.colorMode(HSB, 360, 100, 100, 100);
@@ -5354,7 +5694,8 @@
       });
       document.addEventListener('mousemove', function (e) {
         if (!dragging) return;
-        var nw = Math.max(MIN, Math.min(MAX, startW + (e.clientX - startX)));
+        // Panel is on the right; dragging left increases width
+        var nw = Math.max(MIN, Math.min(MAX, startW - (e.clientX - startX)));
         sidebar.style.width = nw + 'px';
         syncChips(nw);
       });
@@ -5369,6 +5710,47 @@
         syncChips(fw);
       });
     })();
+
+    // ── Resizable left panel ──
+    (function initLeftPanelResize() {
+      var panel = document.getElementById('panelLeft');
+      if (!panel) return;
+      var LS_W = 'cv_leftpanel_w', MIN = 180, MAX = 380;
+
+      var saved = parseInt(localStorage.getItem(LS_W));
+      if (saved && saved >= MIN && saved <= MAX) panel.style.width = saved + 'px';
+
+      var handle = document.createElement('div');
+      handle.className = 'panel-left-drag';
+      var bar = document.createElement('div'); bar.className = 'panel-left-drag-bar';
+      handle.appendChild(bar);
+      panel.appendChild(handle);
+
+      var dragging = false, startX = 0, startW = 0;
+      handle.addEventListener('mousedown', function (e) {
+        dragging = true; startX = e.clientX; startW = panel.offsetWidth;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        var nw = Math.max(MIN, Math.min(MAX, startW + (e.clientX - startX)));
+        panel.style.width = nw + 'px';
+      });
+      document.addEventListener('mouseup', function () {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        localStorage.setItem(LS_W, panel.offsetWidth);
+      });
+    })();
+
+    // Init bank on page load
+    buildBankUI();
 
     // ═══════════════════════════════════════════════════════
     // SOUND ENGINE  (Tone.js v14)
