@@ -10,47 +10,34 @@
   <!-- Strudel: load core API as ES module, expose via window globals -->
   <script type="module">
     (async function () {
-      var _ev, _hush, _gac;
+      var _ev, _hush, _gac, _iofc;
       try {
-        var sw = await import('https://esm.sh/@strudel/web@1.1.0');
+        // Import without version pin so esm.sh resolves to latest stable
+        var sw = await import('https://esm.sh/@strudel/web');
         _ev = sw.evaluate; _hush = sw.hush;
         await sw.initStrudel();
         try {
-          var wa = await import('https://esm.sh/@strudel/webaudio@1.1.0');
+          var wa = await import('https://esm.sh/@strudel/webaudio');
           _gac = wa.getAudioContext;
-          // Attempt to inject an AnalyserNode into Strudel's audio chain.
-          // We monkey-patch AudioNode.prototype.connect to intercept the first
-          // node that connects to an AudioDestinationNode after initStrudel().
-          var _origConn = AudioNode.prototype.connect;
-          var _injected = false;
-          AudioNode.prototype.connect = function () {
-            var result = _origConn.apply(this, arguments);
-            if (!_injected && arguments[0] &&
-                arguments[0].constructor &&
-                arguments[0].constructor.name === 'AudioDestinationNode') {
-              _injected = true;
-              AudioNode.prototype.connect = _origConn;
-              var ctx = this.context;
-              var analyser = ctx.createAnalyser();
-              analyser.fftSize = 1024;
-              analyser.smoothingTimeConstant = 0.75;
-              try {
-                this.disconnect(ctx.destination);
-                _origConn.call(this, analyser);
-                _origConn.call(analyser, ctx.destination);
-                window._strudelAnalyser = analyser;
-                window._strudelFreqData = new Uint8Array(analyser.frequencyBinCount);
-              } catch (e) { AudioNode.prototype.connect = _origConn; }
-            }
-            return result;
-          };
+          _iofc = wa.initAudioOnFirstClick;
+          // Register the click-to-resume handler so the AudioContext
+          // starts on the first user interaction (browser autoplay policy)
+          if (_iofc) _iofc();
         } catch (e) { /* webaudio optional */ }
         window.strudelReady = true;
+        console.log('[Strudel] ready');
       } catch (e) {
-        console.warn('[Strudel] load failed:', e);
+        console.error('[Strudel] init failed:', e);
+        window.strudelError = String(e);
       }
       window._strudelEvaluate = async function (code) {
         if (!_ev) throw new Error('Strudel not loaded');
+        // Resume AudioContext if still suspended — this is called from a
+        // click handler so the browser allows it under autoplay policy.
+        var ctx = _gac ? _gac() : null;
+        if (ctx && ctx.state !== 'running') {
+          try { await ctx.resume(); } catch (re) {}
+        }
         return _ev(code);
       };
       window._strudelHush = function () { if (_hush) _hush(); };
@@ -5444,14 +5431,21 @@
       // Timeout fallback
       setTimeout(function () {
         clearInterval(checkReady);
-        if (!window.strudelReady) updateStrudelStatus('Strudel failed to load (check network)', 'err');
+        if (!window.strudelReady) {
+          var errMsg = window.strudelError ? ('Load error: ' + window.strudelError) : 'Strudel failed to load (check network/console)';
+          updateStrudelStatus(errMsg, 'err');
+        }
       }, 15000);
     }
 
     // ── Play / Stop ──
     function strudelPlay() {
-      if (!window.strudelReady) {
-        updateStrudelStatus('Strudel still loading — please wait…', 'wait');
+      if (!window.strudelReady || !window._strudelEvaluate) {
+        if (window.strudelError) {
+          updateStrudelStatus('Load error — check console', 'err');
+        } else {
+          updateStrudelStatus('Strudel still loading — please wait…', '');
+        }
         return;
       }
       var code = document.getElementById('strudelCode').value.trim();
@@ -5463,14 +5457,16 @@
         evalCode = evalCode + '\n.onTrigger(cvhap)';
       }
 
-      updateStrudelStatus('Evaluating…', '');
+      updateStrudelStatus('Starting…', '');
       window._strudelEvaluate(evalCode).then(function () {
         strudelOn = true;
         updateStrudelStatus('Playing', 'running');
         var btn = document.getElementById('strudelPlayBtn');
         if (btn) { btn.textContent = '▶ Playing'; btn.classList.add('active'); }
       }).catch(function (e) {
-        updateStrudelStatus('Error: ' + (e && e.message ? e.message : String(e)), 'err');
+        var msg = e && e.message ? e.message : String(e);
+        updateStrudelStatus('Error: ' + msg, 'err');
+        console.error('[Strudel] evaluate error:', e);
       });
     }
 
