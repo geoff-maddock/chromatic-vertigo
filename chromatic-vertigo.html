@@ -6,8 +6,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chromatic Vertigo — Chaos Engine</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
   <script src="https://unpkg.com/hydra-synth"></script>
+  <!-- Strudel: load core API as ES module, expose via window globals -->
+  <script type="module">
+    (async function () {
+      var _ev, _hush, _gac, _iofc;
+      try {
+        // Import without version pin so esm.sh resolves to latest stable
+        var sw = await import('https://esm.sh/@strudel/web');
+        _ev = sw.evaluate; _hush = sw.hush;
+        await sw.initStrudel();
+        try {
+          var wa = await import('https://esm.sh/@strudel/webaudio');
+          _gac = wa.getAudioContext;
+          _iofc = wa.initAudioOnFirstClick;
+          // Register the click-to-resume handler so the AudioContext
+          // starts on the first user interaction (browser autoplay policy)
+          if (_iofc) _iofc();
+        } catch (e) { /* webaudio optional */ }
+        window.strudelReady = true;
+        console.log('[Strudel] ready');
+      } catch (e) {
+        console.error('[Strudel] init failed:', e);
+        window.strudelError = String(e);
+      }
+      window._strudelEvaluate = async function (code) {
+        if (!_ev) throw new Error('Strudel not loaded');
+        // Resume AudioContext if still suspended — this is called from a
+        // click handler so the browser allows it under autoplay policy.
+        var ctx = _gac ? _gac() : null;
+        if (ctx && ctx.state !== 'running') {
+          try { await ctx.resume(); } catch (re) {}
+        }
+        return _ev(code);
+      };
+      window._strudelHush = function () { if (_hush) _hush(); };
+      window._strudelGetCtx = function () { return _gac ? _gac() : null; };
+      // cvhap is called by .onTrigger(cvhap) inside user Strudel patterns
+      window.cvhap = function (hap) {
+        if (typeof strudelHapCallback === 'function') strudelHapCallback(hap);
+      };
+    })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap"
     rel="stylesheet">
   <style>
@@ -280,40 +320,93 @@
     }
 
     /* ── sound engine ── */
-    .snd-enable-btn {
-      width: 100%;
-      padding: 8px;
+    /* ── Strudel Engine ── */
+    .strudel-toolbar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .strudel-play-btn {
+      flex: 1;
+      padding: 7px 10px;
       border: none;
-      border-radius: 8px;
+      border-radius: 7px;
       cursor: pointer;
       font-family: 'Poppins', sans-serif;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       background: var(--lgray);
       color: var(--mid);
       transition: all .2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      margin-bottom: 8px;
     }
 
-    .snd-enable-btn.active {
-      background: var(--blue);
+    .strudel-play-btn.active {
+      background: var(--green);
       color: white;
     }
 
-    .snd-enable-btn.active:hover {
-      background: #5589b8;
+    .strudel-play-btn.stop-btn {
+      flex: 0 0 auto;
+      background: var(--lgray);
+      color: var(--orange);
     }
 
-    .snd-enable-btn:not(.active):hover {
+    .strudel-play-btn.stop-btn:hover {
+      background: #fde8e0;
+    }
+
+    .strudel-play-btn:not(.active):not(.stop-btn):hover {
       background: #e0ddd5;
       color: var(--dark);
     }
 
-    .snd-chip {
+    .strudel-code {
+      width: 100%;
+      min-height: 110px;
+      padding: 9px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.55;
+      background: #1c1c1b;
+      color: #e8e4d0;
+      border: 1px solid var(--lgray);
+      border-radius: 7px;
+      outline: none;
+      resize: vertical;
+      tab-size: 2;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .strudel-status {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--mid);
+      margin-bottom: 6px;
+      min-height: 14px;
+    }
+
+    .strudel-status.ok { color: var(--green); }
+    .strudel-status.err { color: var(--orange); }
+    .strudel-status.running { color: var(--blue); }
+
+    .strudel-auto-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 8px;
+      font-size: 10px;
+      color: var(--mid);
+      font-weight: 500;
+    }
+
+    .strudel-auto-row input[type=checkbox] {
+      margin: 0;
+      accent-color: var(--green);
+    }
+
+    .strudel-chip {
       padding: 3px 8px;
       border: 1.5px solid var(--lgray);
       border-radius: 20px;
@@ -326,184 +419,36 @@
       white-space: nowrap;
     }
 
-    .snd-chip.active {
-      border-color: var(--blue);
-      background: #f0f5ff;
-      color: var(--blue);
+    .strudel-chip.active {
+      border-color: var(--green);
+      background: #f0f5ec;
+      color: var(--green);
     }
 
-    .snd-chip:hover:not(.active) {
+    .strudel-chip:hover:not(.active) {
       border-color: #b0b8cc;
       color: var(--dark);
     }
 
-    .snd-chips {
+    .strudel-preset-row {
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
       margin-bottom: 8px;
     }
 
-    .snd-badge {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--blue);
-      margin-left: 4px;
-      vertical-align: middle;
-      flex-shrink: 0;
-    }
-
-    .mod-card.snd-on {
-      box-shadow: inset 3px 0 0 var(--blue);
-    }
-
-    .snd-binding-list {
-      display: grid;
-      gap: 3px;
-      margin-top: 4px;
-    }
-
-    .snd-binding-row {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 0;
-    }
-
-    .snd-binding-label {
+    .strudel-hint {
       font-size: 9px;
-      font-weight: 600;
-      flex: 1;
-      color: var(--dark);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .snd-mode-chips {
-      display: flex;
-      gap: 2px;
-      flex-shrink: 0;
-    }
-
-    .snd-mode-chip {
-      padding: 2px 5px;
-      border: 1.5px solid var(--lgray);
-      border-radius: 10px;
-      font-size: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      background: white;
       color: var(--mid);
-      transition: all .1s;
-      white-space: nowrap;
+      line-height: 1.5;
+      margin-bottom: 6px;
     }
 
-    .snd-mode-chip.active {
-      border-color: var(--blue);
-      background: #f0f5ff;
-      color: var(--blue);
-    }
-
-    .snd-panel-head {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--mid);
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      margin: 8px 0 5px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .snd-panel-head span {
-      flex: 1;
-    }
-
-    .snd-sync-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 10px;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 6px;
+    .strudel-hint code {
       background: var(--lgray);
-      cursor: pointer;
-      transition: all .15s;
-      user-select: none;
-    }
-
-    .snd-sync-badge.active {
-      background: var(--blue);
-      color: white;
-    }
-
-    .snd-mod-head {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 0 4px;
-      border-top: 1px solid var(--lgray);
-      margin-top: 6px;
-      cursor: pointer;
-    }
-
-    .snd-mod-head-label {
-      font-size: 10px;
-      font-weight: 600;
-      flex: 1;
-    }
-
-    .snd-mod-toggle {
-      width: 28px;
-      height: 15px;
-      border-radius: 8px;
-      background: var(--lgray);
-      cursor: pointer;
-      position: relative;
-      transition: background .2s;
-      border: none;
-      flex-shrink: 0;
-    }
-
-    .snd-mod-toggle.on {
-      background: var(--blue);
-    }
-
-    .snd-mod-toggle::after {
-      content: '';
-      position: absolute;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: white;
-      top: 3px;
-      left: 3px;
-      transition: left .2s;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
-    }
-
-    .snd-mod-toggle.on::after {
-      left: 16px;
-    }
-
-    .snd-mod-body {
-      display: none;
-      padding-top: 4px;
-    }
-
-    .snd-mod-body.open {
-      display: block;
-    }
-
-    .snd-sep {
-      height: 1px;
-      background: var(--lgray);
-      margin: 6px 0;
+      padding: 1px 3px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
     }
 
     input[type=number].seed-in {
@@ -1795,29 +1740,26 @@
         </div>
       </div>
 
-      <!-- SOUND ENGINE -->
-      <div class="sec" id="soundSec">
-        <h3>Sound</h3>
-        <div id="soundSecBody">
-          <button class="snd-enable-btn" id="sndEnableBtn" onclick="toggleSound()">🔊 Enable Sound Engine</button>
-          <div id="sndMainControls" style="display:none">
-            <div class="cg"><label>Master Volume</label>
-              <div class="srow"><input type="range" id="sndMasterVol" min="0" max="1" step=".02" value=".7"
-                  oninput="setSndMasterVol(+this.value)"><span class="val" id="sndMasterVol-v">.70</span></div>
-            </div>
-            <div class="cg"><label>BPM</label>
-              <div class="srow"><input type="range" id="sndBpm" min="40" max="200" step="1" value="90"
-                  oninput="setSndBpm(+this.value)"><span class="val" id="sndBpm-v">90</span><span class="snd-sync-badge"
-                  id="sndSyncBeat" onclick="toggleBeatSync()">🥁 Sync</span></div>
-            </div>
-            <div class="cg"><label>Reverb</label>
-              <div class="srow"><input type="range" id="sndReverb" min="0" max="1" step=".02" value=".35"
-                  oninput="setSndReverb(+this.value)"><span class="val" id="sndReverb-v">.35</span></div>
-            </div>
-            <div class="snd-panel-head"><span>Sound Presets</span></div>
-            <div class="snd-chips" id="sndPresetRow"></div>
-            <div class="snd-panel-head" style="margin-top:6px"><span>Module Sounds</span></div>
-            <div id="sndModuleList"></div>
+      <!-- STRUDEL ENGINE -->
+      <div class="sec" id="strudelSec">
+        <h3>Strudel</h3>
+        <div id="strudelSecBody">
+          <div class="strudel-toolbar">
+            <button class="strudel-play-btn" id="strudelPlayBtn" onclick="strudelPlay()">▶ Play</button>
+            <button class="strudel-play-btn stop-btn" id="strudelStopBtn" onclick="strudelStop()">■ Stop</button>
+          </div>
+          <div class="strudel-auto-row">
+            <input type="checkbox" id="strudelAutoVisualCb" checked onchange="strudelAutoVisual=this.checked">
+            <span>Auto-Visual &mdash; inject <code style="font-family:monospace;font-size:9px">.onTrigger(cvhap)</code> for reactive visuals</span>
+          </div>
+          <div class="strudel-preset-row" id="strudelPresetRow"></div>
+          <textarea class="strudel-code" id="strudelCode" spellcheck="false"
+            placeholder="Enter Strudel pattern&#10;e.g. note(&quot;c3 e3 g3&quot;).s(&quot;triangle&quot;)"></textarea>
+          <div class="strudel-status" id="strudelStatus">Strudel loading…</div>
+          <div class="strudel-hint">
+            Write any Strudel pattern. Use <code>cvhap</code> with <code>.onTrigger(cvhap)</code>
+            to wire note events directly to the visuals, or enable Auto-Visual above.
+            Low notes drive Bass, mid notes drive Mid, high notes drive Hi.
           </div>
         </div>
       </div>
@@ -2127,6 +2069,19 @@
       document.getElementById('beatFlash').classList.remove('active');
     }
     function getAudio() {
+      // ── Strudel path: bands driven by hap event callbacks ──
+      if (strudelOn) {
+        tickStrudelBands();
+        var sv = _strudelBands.vol, sb = _strudelBands.bass, sm = _strudelBands.mid, sh = _strudelBands.hi;
+        if (sv > peakVol) peakVol = sv; else peakVol *= peakDecay;
+        if (sb > peakBass) peakBass = sb; else peakBass *= peakDecay;
+        if (sm > peakMid) peakMid = sm; else peakMid *= peakDecay;
+        if (sh > peakHi) peakHi = sh; else peakHi *= peakDecay;
+        if (sb > .18) { if (frameCount - beatTimer > 8) { beatDetect = 1; beatTimer = frameCount; } else beatDetect *= .9; } else beatDetect *= .88;
+        updateMeterUI(sv, sb, sm, sh, beatDetect);
+        return;
+      }
+      // ── Microphone path (unchanged) ──
       if (!micOn || !analyserNode) return;
       analyserNode.getByteFrequencyData(freqData);
       var n = freqData.length, s = 0, bs = 0, ms = 0, hs = 0;
@@ -2141,10 +2096,10 @@
       updateMeterUI(sVol, sBass, sMid, sHi, beatDetect);
       drawFFT();
     }
-    function av() { return micOn ? sVol : .03 * Math.abs(Math.sin(frameCount * .04)); }
-    function abass() { return micOn ? sBass : .025 * Math.abs(Math.sin(frameCount * .025)); }
-    function amid() { return micOn ? sMid : .02 * Math.abs(Math.sin(frameCount * .033)); }
-    function ahi() { return micOn ? sHi : .015 * Math.abs(Math.sin(frameCount * .05)); }
+    function av()    { return strudelOn ? _strudelBands.vol  : micOn ? sVol  : .03  * Math.abs(Math.sin(frameCount * .04)); }
+    function abass() { return strudelOn ? _strudelBands.bass : micOn ? sBass : .025 * Math.abs(Math.sin(frameCount * .025)); }
+    function amid()  { return strudelOn ? _strudelBands.mid  : micOn ? sMid  : .02  * Math.abs(Math.sin(frameCount * .033)); }
+    function ahi()   { return strudelOn ? _strudelBands.hi   : micOn ? sHi   : .015 * Math.abs(Math.sin(frameCount * .05)); }
 
     function updateMeterUI(vol, bass, mid, hi, beat) {
       function sb(id, vid, v, cap) { var el = document.getElementById(id); if (el) el.style.width = Math.min(v / cap, 1) * 100 + '%'; var ve = document.getElementById(vid); if (ve) ve.textContent = v.toFixed(2); }
@@ -2481,7 +2436,6 @@
       inst.type = type;
       inst.id = type + '_' + idSuffix;
       inst.hueRange = { start: 0, end: 360 };
-      inst.sound = makeSoundDefaults(type);
       return inst;
     }
 
@@ -2835,8 +2789,6 @@
         })(m);
         var aovEl = document.getElementById('aov-body-' + m.id);
         if (aovEl) (function (inst) { buildModAovUI(aovEl, inst); })(m);
-        // Sound panel — injected after the aov section
-        buildModSoundUI(m);
       });
     }
 
@@ -3269,7 +3221,7 @@
       var fftC = document.getElementById('fftCanvas'); if (fftC) { fftC.width = sz; fftCtx = null; }
       initFxBuffers();
       buildModUI(); buildMappingLabels(); doInitSys();
-      initSound(); buildGlobalSoundUI();
+      buildStrudelUI();
       var ghp = document.getElementById('globalHuePicker');
       if (ghp) buildHuePicker(ghp, 'Global Hue Range', params.hueRange, function (s, e) { params.hueRange.start = s; params.hueRange.end = e; });
       // Init Hydra engine; apply code for any hydra modules that start enabled
@@ -3567,8 +3519,7 @@
           drawModuleInstance(m, pg, am, bm, mm);
         });
       });
-      // Tick sound engine each frame
-      if (soundEnabled) tickSoundEngine();
+      // (Strudel band decay is handled inside getAudio() above)
 
       // Capture pg into feedback buffer BEFORE vignette so the vignette
       // doesn't accumulate with each feedback iteration.
@@ -4507,7 +4458,7 @@
         var vel = document.getElementById(k + '-v'); if (vel) vel.textContent = fmtV(params[k]);
       });
       doUpdateSeedDisp(); buildModUI(); doInitSys();
-      destroyAllSounds();
+      strudelStop();
       var ghp = document.getElementById('globalHuePicker');
       if (ghp) buildHuePicker(ghp, 'Global Hue Range', params.hueRange, function (s, e) { params.hueRange.start = s; params.hueRange.end = e; });
     } function doSave() { saveCanvas('vertigo-' + params.seed, 'png'); }
@@ -5371,660 +5322,174 @@
     })();
 
     // ═══════════════════════════════════════════════════════
-    // SOUND ENGINE  (Tone.js v14)
+    // STRUDEL INTEGRATION
+    // Replaces the Tone.js sound engine.
+    // Audio reactivity comes from two sources:
+    //   1. Hap callbacks  – each Strudel note event updates _strudelBands
+    //   2. AudioContext analyser (bonus) – injected by the module script
+    // Both feed into the existing AR() / av() / abass() pipeline.
     // ═══════════════════════════════════════════════════════
 
-    // ── Scales (semitone intervals from root) ──
-    var SOUND_SCALES = {
-      'Pentatonic Major': [0, 2, 4, 7, 9],
-      'Pentatonic Minor': [0, 3, 5, 7, 10],
-      'Major': [0, 2, 4, 5, 7, 9, 11],
-      'Natural Minor': [0, 2, 3, 5, 7, 8, 10],
-      'Dorian': [0, 2, 3, 5, 7, 9, 10],
-      'Lydian': [0, 2, 4, 6, 7, 9, 11],
-      'Phrygian': [0, 1, 3, 5, 7, 8, 10],
-      'Whole Tone': [0, 2, 4, 6, 8, 10],
-      'Octatonic': [0, 1, 3, 4, 6, 7, 9, 10],
-      'Chromatic': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    };
+    // ── Strudel band state (updated by hap callbacks, decayed per frame) ──
+    var strudelOn = false;
+    var strudelAutoVisual = true;
+    var _strudelBands = { vol: 0, bass: 0, mid: 0, hi: 0 };
+    var _strudelActivePreset = '';
 
-    // ── Instrument presets (Tone.js synth type + options) ──
-    var SOUND_INSTRUMENTS = {
-      'PolySynth': { ctor: 'PolySynth', opts: { oscillator: { type: 'triangle' }, envelope: { attack: .04, decay: .2, sustain: .5, release: 1.2 } } },
-      'FMSynth': { ctor: 'FMSynth', opts: { modulationIndex: 5, envelope: { attack: .02, decay: .3, sustain: .5, release: 1.5 }, modulation: { type: 'sine' } } },
-      'AMSynth': { ctor: 'AMSynth', opts: { harmonicity: 1.5, envelope: { attack: .05, decay: .3, sustain: .6, release: 1.5 } } },
-      'PluckSynth': { ctor: 'PluckSynth', opts: { attackNoise: 1, dampening: 4000, resonance: .95 } },
-      'MembraneSynth': { ctor: 'MembraneSynth', opts: { pitchDecay: .06, octaves: 6, envelope: { attack: .002, decay: .4, sustain: 0, release: .5 } } },
-      'MetalSynth': { ctor: 'MetalSynth', opts: { frequency: 200, envelope: { attack: .001, decay: .4, release: .2 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 } },
-      'NoiseSynth': { ctor: 'NoiseSynth', opts: { noise: { type: 'pink' }, envelope: { attack: .005, decay: .1, sustain: .5, release: .3 } } },
-      'Synth (Square)': { ctor: 'Synth', opts: { oscillator: { type: 'square' }, envelope: { attack: .01, decay: .1, sustain: .5, release: .8 } } }
-    };
+    // ── Per-frame band decay (called inside getAudio() when strudelOn) ──
+    function tickStrudelBands() {
+      _strudelBands.vol  *= 0.88;
+      _strudelBands.bass *= 0.82;
+      _strudelBands.mid  *= 0.85;
+      _strudelBands.hi   *= 0.90;
+    }
 
-    // ── Binding modes ──
-    var SND_MODES = ['off', 'melodic', 'rhythmic', 'continuous'];
-    var SND_MODE_LABELS = { off: 'Off', melodic: 'Mel', rhythmic: 'Rhy', continuous: 'Con' };
+    // ── Hap event handler: translates a Strudel note event to visual bands ──
+    // Called via window.cvhap → strudelHapCallback from .onTrigger(cvhap)
+    function strudelHapCallback(hap) {
+      var val = hap && hap.value || {};
+      var gain = (val.gain !== undefined ? +val.gain : 1) * 0.8;
+      if (gain < 0.01) return;
 
-    // ── Default sound config per module type ──
-    var MOD_SOUND_DEFAULTS = {
-      pinwheels: {
-        enabled: false, instrument: 'PolySynth', scale: 'Pentatonic Major', octave: 4, octaveRange: 2, volume: -.12, reverbSend: .3, bpmOffset: 0,
-        bindings: { ringCount: 'continuous', bladeCount: 'melodic', wheelCount: 'off', __beat__: 'rhythmic', __activity__: 'off' }
+      // Parse octave from note string: 'c3', 'eb4', 'a#5', MIDI numbers, etc.
+      var note = String(val.note !== undefined ? val.note : (val.n !== undefined ? val.n : ''));
+      var octave = 4;
+      var om = note.match(/(\d+)$/);
+      if (om) octave = parseInt(om[1]);
+      // Drums: map sound names to frequency bands
+      var s = String(val.s || '');
+      if (/^(bd|kick)/i.test(s))       { octave = 1; gain *= 1.2; }
+      else if (/^(sd|snare|cp)/i.test(s)) { octave = 3; }
+      else if (/^(hh|ch|oh|cy|rim)/i.test(s)) { octave = 6; }
+
+      _strudelBands.vol  = Math.min(1, _strudelBands.vol  + gain * 0.4);
+      if      (octave <= 2) _strudelBands.bass = Math.min(1, _strudelBands.bass + gain * 0.7);
+      else if (octave <= 4) _strudelBands.mid  = Math.min(1, _strudelBands.mid  + gain * 0.5);
+      else                  _strudelBands.hi   = Math.min(1, _strudelBands.hi   + gain * 0.5);
+    }
+
+    // ── Preset patterns ──
+    var _STRUDEL_PRESETS = [
+      {
+        name: 'Bass Pulse',
+        code: 'stack(\n  note("<c2 c2 f1 g2>").s("sawtooth").gain(0.8),\n  s("bd ~ bd ~").gain(1.2)\n).onTrigger(cvhap)'
       },
-      fractureWeb: {
-        enabled: false, instrument: 'PluckSynth', scale: 'Pentatonic Minor', octave: 4, octaveRange: 2, volume: -.15, reverbSend: .45, bpmOffset: 0,
-        bindings: { webDepth: 'melodic', spreadAngle: 'continuous', lines: 'off', webSpin: 'off', __beat__: 'rhythmic', __activity__: 'off' }
+      {
+        name: 'Melodic',
+        code: 'note("<c4 e4 g4 b4>/2")\n  .s("triangle").slow(2).gain(0.6)\n  .onTrigger(cvhap)'
       },
-      lissajous: {
-        enabled: false, instrument: 'FMSynth', scale: 'Lydian', octave: 3, octaveRange: 2, volume: -.18, reverbSend: .5, bpmOffset: 0,
-        bindings: { freqA: 'continuous', freqB: 'continuous', phaseSpeed: 'off', layers: 'melodic', __beat__: 'off', __activity__: 'off' }
+      {
+        name: 'Perc Storm',
+        code: 'stack(\n  s("bd ~ sd ~"),\n  s("~ hh ~ [hh hh]"),\n  note("<c3 ~ e3 ~>").s("pluck").gain(0.7)\n).onTrigger(cvhap)'
       },
-      spirograph: {
-        enabled: false, instrument: 'AMSynth', scale: 'Dorian', octave: 4, octaveRange: 2, volume: -.15, reverbSend: .4, bpmOffset: 0,
-        bindings: { traceSpeed: 'rhythmic', R: 'continuous', r: 'off', d: 'off', passes: 'melodic', __beat__: 'off', __activity__: 'off' }
+      {
+        name: 'Ambient',
+        code: 'note("<c3 f3 g3 bb3>")\n  .s("sine").slow(4).gain(0.5)\n  .onTrigger(cvhap)'
       },
-      particleStorm: {
-        enabled: false, instrument: 'PolySynth', scale: 'Chromatic', octave: 5, octaveRange: 2, volume: -.2, reverbSend: .35, bpmOffset: 0,
-        bindings: { turbulence: 'continuous', count: 'off', trailLen: 'off', gravity: 'melodic', __beat__: 'rhythmic', __activity__: 'off' }
+      {
+        name: 'Crystal',
+        code: 'note("c5 e5 g5 b5".fast(2))\n  .s("triangle").gain(0.5)\n  .onTrigger(cvhap)'
       },
-      kaleidoscope: {
-        enabled: false, instrument: 'PolySynth', scale: 'Whole Tone', octave: 4, octaveRange: 2, volume: -.14, reverbSend: .55, bpmOffset: 0,
-        bindings: { segments: 'melodic', morphSpeed: 'continuous', noiseScale: 'off', fillOpacity: 'off', __beat__: 'off', __activity__: 'off' }
+      {
+        name: 'Chaos',
+        code: 'note("<c3 [e3,g3] ~ bb2>/2").fast(1.5)\n  .s("sawtooth").gain(0.7)\n  .onTrigger(cvhap)'
       },
-      moireGrid: {
-        enabled: false, instrument: 'Synth (Square)', scale: 'Octatonic', octave: 3, octaveRange: 1, volume: -.2, reverbSend: .3, bpmOffset: 0,
-        bindings: { rotSpeed: 'rhythmic', gridSize: 'continuous', layers: 'melodic', lineW: 'off', __beat__: 'rhythmic', __activity__: 'off' }
+      {
+        name: 'Full Kit',
+        code: 'stack(\n  s("bd ~ ~ bd").gain(1.2),\n  s("~ sd ~ sd").gain(0.9),\n  s("[hh hh] hh [hh hh] hh").gain(0.5),\n  note("<c3 f3> <e3 g3>").s("sawtooth").gain(0.6)\n).onTrigger(cvhap)'
       },
-      pulseRings: {
-        enabled: false, instrument: 'MembraneSynth', scale: 'Pentatonic Minor', octave: 3, octaveRange: 1, volume: -.1, reverbSend: .25, bpmOffset: 0,
-        bindings: { ringN: 'melodic', thickness: 'off', spacing: 'off', noiseWarp: 'continuous', __beat__: 'rhythmic', __activity__: 'off' }
-      },
-      chaosTunnel: {
-        enabled: false, instrument: 'FMSynth', scale: 'Phrygian', octave: 3, octaveRange: 2, volume: -.18, reverbSend: .6, bpmOffset: 0,
-        bindings: { twist: 'continuous', depth: 'melodic', cornerBase: 'off', zoomPulse: 'off', __beat__: 'rhythmic', __activity__: 'off' }
-      },
-      noiseField: {
-        enabled: false, instrument: 'NoiseSynth', scale: 'Pentatonic Major', octave: 4, octaveRange: 2, volume: -.22, reverbSend: .5, bpmOffset: 0,
-        bindings: { warp: 'continuous', scale: 'off', step: 'off', arrowLen: 'off', __beat__: 'off', __activity__: 'continuous' }
-      },
-      plasmaWave: {
-        enabled: false, instrument: 'AMSynth', scale: 'Lydian', octave: 4, octaveRange: 2, volume: -.18, reverbSend: .4, bpmOffset: 0,
-        bindings: { speed: 'continuous', scaleA: 'melodic', scaleB: 'off', scaleC: 'off', __beat__: 'off', __activity__: 'off' }
-      },
-      crystalWeb: {
-        enabled: false, instrument: 'PolySynth', scale: 'Whole Tone', octave: 5, octaveRange: 2, volume: -.16, reverbSend: .65, bpmOffset: 0,
-        bindings: { spinX: 'continuous', spinY: 'continuous', spinZ: 'off', faces: 'melodic', __beat__: 'off', __activity__: 'off' }
-      },
-      bloomPetals: {
-        enabled: false, instrument: 'PluckSynth', scale: 'Pentatonic Major', octave: 5, octaveRange: 2, volume: -.13, reverbSend: .45, bpmOffset: 0,
-        bindings: { petals: 'melodic', petalLen: 'continuous', rotSpeed: 'rhythmic', layers: 'off', __beat__: 'off', __activity__: 'off' }
-      },
-      lightningArc: {
-        enabled: false, instrument: 'MetalSynth', scale: 'Chromatic', octave: 3, octaveRange: 1, volume: -.12, reverbSend: .3, bpmOffset: 0,
-        bindings: { arcs: 'melodic', spread: 'continuous', forkDepth: 'off', drift: 'off', __beat__: 'rhythmic', __activity__: 'off' }
-      },
-      orbitWeb: {
-        enabled: false, instrument: 'PluckSynth', scale: 'Pentatonic Minor', octave: 4, octaveRange: 2, volume: -.15, reverbSend: .4, bpmOffset: 0,
-        bindings: { gravity: 'continuous', bodies: 'melodic', trailLen: 'off', initVel: 'off', __beat__: 'rhythmic', __activity__: 'off' }
+      {
+        name: 'Generative',
+        code: 'note(irand(12).add(48)).s("sine")\n  .slow(irand(4).add(1))\n  .gain(rand.range(0.3, 0.8))\n  .onTrigger(cvhap)'
       }
-    };
+    ];
 
-    function makeSoundDefaults(type) {
-      // MOD_SOUND_DEFAULTS may not be declared yet at params init time (hoisting).
-      // Guard and return a safe stub; full defaults are applied when modules are
-      // added at runtime (after all script has executed).
-      if (!MOD_SOUND_DEFAULTS || !MOD_SOUND_DEFAULTS[type]) {
-        return {
-          enabled: false, instrument: 'PolySynth', scale: 'Pentatonic Major',
-          octave: 4, octaveRange: 2, volume: -.15, reverbSend: .35, bpmOffset: 0,
-          bindings: { __beat__: 'off', __activity__: 'off' }
-        };
-      }
-      var d = MOD_SOUND_DEFAULTS[type];
-      return JSON.parse(JSON.stringify(d));
-    }
-
-    // ── Sound state ──
-    var soundEnabled = false;
-    var _sndMaster = null, _sndReverb = null, _sndMasterGain = null;
-    var _sndSynths = {};        // keyed by module id
-    var _sndSeqs = {};          // Tone.Sequence for rhythmic per-module
-    var _sndLastParams = {};    // for melodic change-detection
-    var _sndBeatLast = 0;       // last beatTimer seen, for one-shot beat triggers
-    var _sndBpmSync = false;
-    var _sndBpmIntervals = [];  // rolling BPM measurement buffer
-    var _sndBpmLastBeat = 0;    // timestamp of last mic beat for BPM calc
-    var _sndFrameDiv = 3;       // only update continuous every N frames
-    var _sndGlobalVol = 0.7;
-    var _sndGlobalReverb = 0.35;
-    var _sndGlobalBpm = 90;
-
-    // ── Global sound presets ──
-    var SND_GLOBAL_PRESETS = {
-      'Ambient': { vol: .65, bpm: 72, reverb: .65, modPreset: 'ambient' },
-      'Rhythmic': { vol: .75, bpm: 120, reverb: .25, modPreset: 'rhythmic' },
-      'Melodic': { vol: .7, bpm: 90, reverb: .45, modPreset: 'melodic' },
-      'Percussive': { vol: .8, bpm: 140, reverb: .2, modPreset: 'percussive' },
-      'Silence': { vol: 0, bpm: 90, reverb: .3, modPreset: 'silence' }
-    };
-
-    var SND_MOD_PRESETS = {
-      ambient: { allBindings: { __activity__: 'continuous' }, instrument: 'FMSynth', scale: 'Pentatonic Major' },
-      rhythmic: { allBindings: { __beat__: 'rhythmic' }, instrument: 'MembraneSynth', scale: 'Pentatonic Minor' },
-      melodic: { allBindings: { __activity__: 'melodic' }, instrument: 'PolySynth', scale: 'Lydian' },
-      percussive: { allBindings: { __beat__: 'rhythmic', __activity__: 'off' }, instrument: 'MembraneSynth', scale: 'Chromatic' },
-      silence: { allBindings: {}, setEnabled: false }
-    };
-
-    // ── Init the Tone.js output graph ──
-    function initSound() {
-      // Inflate any stub sound configs created before MOD_SOUND_DEFAULTS was ready
-      params.moduleList.forEach(function (m) {
-        if (!m.sound || !m.sound.bindings || Object.keys(m.sound.bindings).length < 3) {
-          m.sound = makeSoundDefaults(m.type);
-        }
-      });
-      if (typeof Tone === 'undefined') return;
-      try {
-        _sndMasterGain = new Tone.Gain(_sndGlobalVol);
-        _sndReverb = new Tone.Reverb({ decay: 3.5, preDelay: 0.01, wet: _sndGlobalReverb });
-        _sndMasterGain.connect(_sndReverb);
-        _sndReverb.toDestination();
-        Tone.Transport.bpm.value = _sndGlobalBpm;
-      } catch (e) { console.warn('Sound init error:', e); }
-    }
-
-    async function toggleSound() {
-      if (!soundEnabled) {
-        if (typeof Tone === 'undefined') { alert('Tone.js failed to load — check your internet connection.'); return; }
-        await Tone.start();
-        Tone.Transport.start();
-        soundEnabled = true;
-        var btn = document.getElementById('sndEnableBtn');
-        if (btn) { btn.textContent = '🔊 Sound Engine: ON'; btn.classList.add('active'); }
-        var ctrl = document.getElementById('sndMainControls');
-        if (ctrl) ctrl.style.display = '';
-        updateSndModuleList();
-      } else {
-        soundEnabled = false;
-        Tone.Transport.stop();
-        params.moduleList.forEach(function (m) { if (m.sound && m.sound.enabled) stopModSound(m.id); });
-        var btn = document.getElementById('sndEnableBtn');
-        if (btn) { btn.textContent = '🔊 Enable Sound Engine'; btn.classList.remove('active'); }
-        var ctrl = document.getElementById('sndMainControls');
-        if (ctrl) ctrl.style.display = 'none';
-      }
-    }
-
-    function setSndMasterVol(v) {
-      _sndGlobalVol = v;
-      if (_sndMasterGain) _sndMasterGain.gain.rampTo(v, 0.05);
-      var el = document.getElementById('sndMasterVol-v');
-      if (el) el.textContent = v.toFixed(2);
-    }
-
-    function setSndBpm(v) {
-      _sndGlobalBpm = v;
-      if (typeof Tone !== 'undefined') Tone.Transport.bpm.rampTo(v, 0.1);
-      var el = document.getElementById('sndBpm-v');
-      if (el) el.textContent = v;
-    }
-
-    function setSndReverb(v) {
-      _sndGlobalReverb = v;
-      if (_sndReverb) _sndReverb.wet.rampTo(v, 0.1);
-      var el = document.getElementById('sndReverb-v');
-      if (el) el.textContent = v.toFixed(2);
-    }
-
-    function toggleBeatSync() {
-      _sndBpmSync = !_sndBpmSync;
-      var badge = document.getElementById('sndSyncBeat');
-      if (badge) badge.classList.toggle('active', _sndBpmSync);
-    }
-
-    // ── Synth lifecycle ──
-    function getOrCreateModSynth(m) {
-      if (_sndSynths[m.id]) return _sndSynths[m.id];
-      if (typeof Tone === 'undefined' || !m.sound) return null;
-      var spec = SOUND_INSTRUMENTS[m.sound.instrument] || SOUND_INSTRUMENTS['PolySynth'];
-      var synth;
-      try {
-        if (spec.ctor === 'PolySynth') {
-          synth = new Tone.PolySynth(Tone.Synth, spec.opts);
-        } else {
-          synth = new Tone[spec.ctor](spec.opts);
-        }
-        var gain = new Tone.Gain(Math.pow(10, (m.sound.volume || 0) / 20));
-        synth.connect(gain);
-        gain.connect(_sndMasterGain);
-        _sndSynths[m.id] = { synth: synth, gain: gain };
-        return _sndSynths[m.id];
-      } catch (e) { console.warn('Synth create error:', e); return null; }
-    }
-
-    function stopModSound(id) {
-      var s = _sndSynths[id];
-      if (!s) return;
-      try { s.synth.releaseAll ? s.synth.releaseAll() : s.synth.triggerRelease(); } catch (e) { }
-    }
-
-    function destroyModSound(id) {
-      var s = _sndSynths[id];
-      if (!s) return;
-      try { if (_sndSeqs[id]) { _sndSeqs[id].stop(); _sndSeqs[id].dispose(); delete _sndSeqs[id]; } } catch (e) { }
-      try { s.synth.releaseAll ? s.synth.releaseAll() : s.synth.triggerRelease(); setTimeout(function () { try { s.synth.dispose(); s.gain.dispose(); } catch (e) { } }, 400); } catch (e) { }
-      delete _sndSynths[id];
-      delete _sndLastParams[id];
-    }
-
-    function destroyAllSounds() {
-      Object.keys(_sndSynths).forEach(function (id) { destroyModSound(id); });
-    }
-
-    function rebuildModSynth(m) {
-      destroyModSound(m.id);
-      if (soundEnabled && m.sound && m.sound.enabled) getOrCreateModSynth(m);
-    }
-
-    // ── Note mapping ──
-    function paramToNote(value, min, max, scaleName, octave, octaveRange) {
-      var scale = SOUND_SCALES[scaleName] || SOUND_SCALES['Pentatonic Major'];
-      var norm = Math.max(0, Math.min(1, (value - min) / (max - min)));
-      var totalSteps = scale.length * (octaveRange || 2);
-      var step = Math.floor(norm * totalSteps);
-      var scaleIdx = step % scale.length;
-      var oct = octave + Math.floor(step / scale.length);
-      var midi = 12 * (oct + 1) + scale[scaleIdx];
-      return Tone.Frequency(midi, 'midi').toNote();
-    }
-
-    function moduleActivityLevel(m) {
-      // When mic is on use real levels; when off, return a normalized 0-1 sine
-      // so sound bindings have a meaningful value to map to notes.
-      if (!micOn) {
-        return 0.3 + 0.7 * Math.abs(Math.sin(fc * 0.018 + (m.id ? m.id.length * 0.4 : 0)));
-      }
-      var a = AR('vol');
-      if (m.type === 'pinwheels' && sBass) a = AR('bass') * 1.2;
-      if (m.type === 'particleStorm' && sMid) a = AR('mid');
-      if (m.type === 'pulseRings') a = AR('bass');
-      return Math.max(0, Math.min(1, a));
-    }
-
-    // ── Per-frame sound update ──
-    var _sndPrevBeat = 0;
-    var _sndSynthBeatCount = -1; // tracks last synthetic beat index when mic is off
-    function tickSoundEngine() {
-      if (!soundEnabled || typeof Tone === 'undefined') return;
-
-      // BPM sync from mic beat
-      if (_sndBpmSync && micOn && beatDetect > 0.85) {
-        var now = performance.now();
-        if (_sndBpmLastBeat > 0) {
-          var interval = now - _sndBpmLastBeat;
-          if (interval > 250 && interval < 2000) {
-            _sndBpmIntervals.push(60000 / interval);
-            if (_sndBpmIntervals.length > 8) _sndBpmIntervals.shift();
-            var avg = _sndBpmIntervals.reduce(function (a, b) { return a + b; }, 0) / _sndBpmIntervals.length;
-            if (Math.abs(avg - Tone.Transport.bpm.value) > 2) Tone.Transport.bpm.rampTo(avg, 0.5);
-          }
-        }
-        _sndBpmLastBeat = now;
-      }
-
-      // When mic is active use real beat detection; otherwise drive beats from
-      // the Tone.js Transport so rhythmic/melodic bindings fire at the set BPM.
-      var isBeat;
-      if (micOn) {
-        isBeat = (beatDetect > 0.85 && _sndPrevBeat <= 0.85);
-        _sndPrevBeat = beatDetect;
-      } else {
-        var transportSecs = Tone.Transport.seconds;
-        var synthBeat = Math.floor(transportSecs * _sndGlobalBpm / 60);
-        isBeat = (synthBeat !== _sndSynthBeatCount && transportSecs > 0);
-        if (isBeat) _sndSynthBeatCount = synthBeat;
-      }
-
-      params.moduleList.forEach(function (m) {
-        if (!m.on || !m.sound || !m.sound.enabled) return;
-        var s = getOrCreateModSynth(m);
-        if (!s) return;
-        var snd = m.sound;
-        var spec = MOD_SPECS[m.type];
-        if (!spec) return;
-
-        // Cache activity level once per module per frame (used by beat + melodic paths).
-        var act = isBeat ? moduleActivityLevel(m) : 0;
-
-        // ── Beat-triggered bindings ──
-        if (isBeat && snd.bindings.__beat__ === 'rhythmic') {
-          try {
-            var note = paramToNote(act, 0, 1, snd.scale, snd.octave, snd.octaveRange);
-            s.synth.triggerAttackRelease ? s.synth.triggerAttackRelease(note, '8n') :
-              s.synth.triggerAttackRelease('8n');
-          } catch (e) { }
-        }
-
-        // ── Activity-level melodic ──
-        if (snd.bindings.__activity__ === 'melodic' && isBeat) {
-          if (act > 0.01) {
-            try {
-              var note = paramToNote(act, 0, 1, snd.scale, snd.octave, snd.octaveRange);
-              s.synth.triggerAttackRelease ? s.synth.triggerAttackRelease(note, '16n') :
-                s.synth.triggerAttackRelease('16n');
-            } catch (e) { }
-          }
-        }
-
-        // ── Activity continuous (drone modulation) ──
-        if (snd.bindings.__activity__ === 'continuous' && fc % _sndFrameDiv === 0) {
-          var contAct = moduleActivityLevel(m);
-          try {
-            if (s.synth.frequency) {
-              var note = paramToNote(contAct, 0, 1, snd.scale, snd.octave, snd.octaveRange);
-              s.synth.frequency.rampTo(Tone.Frequency(note).toFrequency(), 0.08);
-            }
-          } catch (e) { }
-        }
-
-        // ── Per-param bindings ──
-        if (!spec.params) return;
-        if (!_sndLastParams[m.id]) _sndLastParams[m.id] = {};
-        var prev = _sndLastParams[m.id];
-        spec.params.forEach(function (p) {
-          var pid = p[0], mode = snd.bindings[pid];
-          if (!mode || mode === 'off') return;
-          var val = m[pid];
-          var pmin = p[2], pmax = p[3];
-          if (mode === 'melodic') {
-            var prevVal = prev[pid];
-            if (prevVal === undefined) { prev[pid] = val; return; }
-            if (Math.abs(val - prevVal) > (pmax - pmin) * 0.02) {
-              try {
-                var note = paramToNote(val, pmin, pmax, snd.scale, snd.octave, snd.octaveRange);
-                s.synth.triggerAttackRelease ? s.synth.triggerAttackRelease(note, '16n') :
-                  s.synth.triggerAttackRelease('16n');
-              } catch (e) { }
-              prev[pid] = val;
-            }
-          } else if (mode === 'continuous' && fc % _sndFrameDiv === 0) {
-            try {
-              if (s.synth.frequency) {
-                var note = paramToNote(val, pmin, pmax, snd.scale, snd.octave, snd.octaveRange);
-                s.synth.frequency.rampTo(Tone.Frequency(note).toFrequency(), 0.12);
-              } else if (s.synth.modulationIndex) {
-                var norm = (val - pmin) / (pmax - pmin);
-                s.synth.modulationIndex.rampTo(2 + norm * 18, 0.1);
-              }
-            } catch (e) { }
-          } else if (mode === 'rhythmic' && isBeat) {
-            try {
-              var note = paramToNote(val, pmin, pmax, snd.scale, snd.octave, snd.octaveRange);
-              s.synth.triggerAttackRelease ? s.synth.triggerAttackRelease(note, '8n') :
-                s.synth.triggerAttackRelease('8n');
-            } catch (e) { }
-          }
-        });
-      });
-    }
-
-    // ── Global sound preset application ──
-    function applySoundPreset(name) {
-      var preset = SND_GLOBAL_PRESETS[name];
-      if (!preset) return;
-      setSndMasterVol(preset.vol);
-      setSndBpm(preset.bpm);
-      setSndReverb(preset.reverb);
-      var el;
-      el = document.getElementById('sndMasterVol'); if (el) el.value = preset.vol;
-      el = document.getElementById('sndBpm'); if (el) el.value = preset.bpm;
-      el = document.getElementById('sndReverb'); if (el) el.value = preset.reverb;
-      var mp = SND_MOD_PRESETS[preset.modPreset];
-      if (!mp) return;
-      params.moduleList.forEach(function (m) {
-        if (!m.sound) return;
-        if (mp.setEnabled === false) {
-          m.sound.enabled = false;
-        } else {
-          if (mp.instrument) m.sound.instrument = mp.instrument;
-          if (mp.scale) m.sound.scale = mp.scale;
-          Object.keys(mp.allBindings || {}).forEach(function (k) {
-            m.sound.bindings[k] = mp.allBindings[k];
-          });
-          if (m.on) m.sound.enabled = true;
-        }
-        rebuildModSynth(m);
-      });
-      updateSndModuleList();
-      document.querySelectorAll('#sndPresetRow .snd-chip').forEach(function (c) {
-        c.classList.toggle('active', c.textContent.trim() === name);
-      });
-    }
-
-    // ── Build global sound section UI ──
-    function buildGlobalSoundUI() {
-      var row = document.getElementById('sndPresetRow');
+    // ── UI builder: preset chips ──
+    function buildStrudelUI() {
+      var row = document.getElementById('strudelPresetRow');
       if (!row) return;
       row.innerHTML = '';
-      Object.keys(SND_GLOBAL_PRESETS).forEach(function (name) {
+      _STRUDEL_PRESETS.forEach(function (p) {
         var chip = document.createElement('span');
-        chip.className = 'snd-chip';
-        chip.textContent = name;
-        chip.onclick = (function (n) {
-          return function () {
-            if (soundEnabled) applySoundPreset(n);
-            else {
-              Object.keys(SND_GLOBAL_PRESETS[n] || {}).forEach(function () { });
-              applySoundPreset(n);
-            }
-          };
-        })(name);
+        chip.className = 'strudel-chip';
+        chip.textContent = p.name;
+        chip.onclick = function () {
+          document.getElementById('strudelCode').value = p.code;
+          row.querySelectorAll('.strudel-chip').forEach(function (c) { c.classList.remove('active'); });
+          chip.classList.add('active');
+          _strudelActivePreset = p.name;
+        };
         row.appendChild(chip);
       });
+      // Update status once Strudel module finishes loading
+      var checkReady = setInterval(function () {
+        if (window.strudelReady) {
+          updateStrudelStatus('Ready — enter a pattern and press Play', '');
+          clearInterval(checkReady);
+        }
+      }, 300);
+      // Timeout fallback
+      setTimeout(function () {
+        clearInterval(checkReady);
+        if (!window.strudelReady) {
+          var errMsg = window.strudelError ? ('Load error: ' + window.strudelError) : 'Strudel failed to load (check network/console)';
+          updateStrudelStatus(errMsg, 'err');
+        }
+      }, 15000);
     }
 
-    // ── Rebuild module sound list panel (inside global sound section) ──
-    function updateSndModuleList() {
-      var list = document.getElementById('sndModuleList');
-      if (!list) return;
-      list.innerHTML = '';
-      params.moduleList.forEach(function (m) {
-        if (!m.sound) return;
-        var spec = MOD_SPECS[m.type];
-        if (!spec) return;
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--lgray);';
-        var lbl = document.createElement('span');
-        lbl.style.cssText = 'font-size:10px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-        lbl.textContent = spec.label;
-        var tog = document.createElement('button');
-        tog.className = 'snd-mod-toggle' + (m.sound.enabled ? ' on' : '');
-        tog.id = 'sndglobtog-' + m.id;
-        tog.onclick = (function (inst) {
-          return function () {
-            inst.sound.enabled = !inst.sound.enabled;
-            this.classList.toggle('on', inst.sound.enabled);
-            var card = document.getElementById('card-' + inst.id);
-            if (card) card.classList.toggle('snd-on', inst.sound.enabled);
-            var hd = document.getElementById('sndmodtog-' + inst.id);
-            if (hd) hd.classList.toggle('on', inst.sound.enabled);
-            if (inst.sound.enabled && soundEnabled) getOrCreateModSynth(inst);
-            else if (!inst.sound.enabled) stopModSound(inst.id);
-          };
-        })(m);
-        row.appendChild(lbl);
-        row.appendChild(tog);
-        list.appendChild(row);
-      });
-    }
-
-    // ── Per-module sound panel (injected into each mod card) ──
-    function buildModSoundUI(m) {
-      var card = document.getElementById('card-' + m.id);
-      if (!card || !m.sound) return;
-      var body = card.querySelector('.mod-body');
-      if (!body) return;
-      var spec = MOD_SPECS[m.type];
-      if (!spec) return;
-
-      var wrap = document.createElement('div');
-      wrap.id = 'sndpanel-' + m.id;
-
-      // Header row
-      var hd = document.createElement('div');
-      hd.className = 'snd-mod-head';
-      hd.onclick = (function (ww) { return function () { var b = ww.querySelector('.snd-mod-body'); if (b) b.classList.toggle('open'); }; })(wrap);
-      var icon = document.createElement('span');
-      icon.textContent = '🔊';
-      icon.style.cssText = 'font-size:12px;';
-      var lbl = document.createElement('span');
-      lbl.className = 'snd-mod-head-label';
-      lbl.textContent = 'Sound';
-      var tog = document.createElement('button');
-      tog.className = 'snd-mod-toggle' + (m.sound.enabled ? ' on' : '');
-      tog.id = 'sndmodtog-' + m.id;
-      tog.onclick = (function (inst, card) {
-        return function (e) {
-          e.stopPropagation();
-          inst.sound.enabled = !inst.sound.enabled;
-          this.classList.toggle('on', inst.sound.enabled);
-          card.classList.toggle('snd-on', inst.sound.enabled);
-          var gtog = document.getElementById('sndglobtog-' + inst.id);
-          if (gtog) gtog.classList.toggle('on', inst.sound.enabled);
-          if (inst.sound.enabled && soundEnabled) getOrCreateModSynth(inst);
-          else if (!inst.sound.enabled) stopModSound(inst.id);
-        };
-      })(m, card);
-      if (m.sound.enabled) card.classList.add('snd-on');
-      hd.appendChild(icon);
-      hd.appendChild(lbl);
-      hd.appendChild(tog);
-      wrap.appendChild(hd);
-
-      // Collapsible body
-      var pb = document.createElement('div');
-      pb.className = 'snd-mod-body';
-
-      // Volume slider
-      var vcg = document.createElement('div'); vcg.className = 'cg';
-      vcg.innerHTML = '<label>Volume (dB)</label><div class="srow"><input type="range" min="-40" max="0" step="1" value="' + Math.round((m.sound.volume || 0) * 20) + '" oninput="setSndModVol(\'' + m.id + '\',+this.value,\'sndvlbl-' + m.id + '\')"><span class="val" id="sndvlbl-' + m.id + '">' + Math.round((m.sound.volume || 0) * 20) + '</span></div>';
-      pb.appendChild(vcg);
-
-      // Instrument chips
-      var ilbl = document.createElement('div'); ilbl.className = 'snd-panel-head'; ilbl.innerHTML = '<span>Instrument</span>';
-      pb.appendChild(ilbl);
-      var ichips = document.createElement('div'); ichips.className = 'snd-chips';
-      Object.keys(SOUND_INSTRUMENTS).forEach(function (name) {
-        var c = document.createElement('span');
-        c.className = 'snd-chip' + (m.sound.instrument === name ? ' active' : '');
-        c.textContent = name;
-        c.onclick = (function (n, inst, row) {
-          return function () {
-            inst.sound.instrument = n;
-            row.querySelectorAll('.snd-chip').forEach(function (x) { x.classList.remove('active'); });
-            this.classList.add('active');
-            rebuildModSynth(inst);
-          };
-        })(name, m, ichips);
-        ichips.appendChild(c);
-      });
-      pb.appendChild(ichips);
-
-      // Scale chips
-      var slbl = document.createElement('div'); slbl.className = 'snd-panel-head'; slbl.innerHTML = '<span>Scale</span>';
-      pb.appendChild(slbl);
-      var schips = document.createElement('div'); schips.className = 'snd-chips';
-      Object.keys(SOUND_SCALES).forEach(function (name) {
-        var c = document.createElement('span');
-        c.className = 'snd-chip' + (m.sound.scale === name ? ' active' : '');
-        c.textContent = name;
-        c.onclick = (function (n, inst, row) {
-          return function () {
-            inst.sound.scale = n;
-            row.querySelectorAll('.snd-chip').forEach(function (x) { x.classList.remove('active'); });
-            this.classList.add('active');
-          };
-        })(name, m, schips);
-        schips.appendChild(c);
-      });
-      pb.appendChild(schips);
-
-      // Octave + range
-      var ocg = document.createElement('div'); ocg.className = 'cg';
-      ocg.innerHTML = '<label>Octave</label><div class="srow"><input type="range" min="1" max="7" step="1" value="' + (m.sound.octave || 4) + '" oninput="setSndModProp(\'' + m.id + '\',\'octave\',+this.value,\'sndoct-' + m.id + '\')"><span class="val" id="sndoct-' + m.id + '">' + (m.sound.octave || 4) + '</span></div>';
-      pb.appendChild(ocg);
-      var rcg = document.createElement('div'); rcg.className = 'cg';
-      rcg.innerHTML = '<label>Octave Range</label><div class="srow"><input type="range" min="1" max="4" step="1" value="' + (m.sound.octaveRange || 2) + '" oninput="setSndModProp(\'' + m.id + '\',\'octaveRange\',+this.value,\'sndoctr-' + m.id + '\')"><span class="val" id="sndoctr-' + m.id + '">' + (m.sound.octaveRange || 2) + '</span></div>';
-      pb.appendChild(rcg);
-
-      // Reverb send slider
-      var rvcg = document.createElement('div'); rvcg.className = 'cg';
-      rvcg.innerHTML = '<label>Reverb Send</label><div class="srow"><input type="range" min="0" max="1" step=".02" value="' + (m.sound.reverbSend || .35) + '" oninput="setSndModProp(\'' + m.id + '\',\'reverbSend\',+this.value,\'sndrvb-' + m.id + '\')"><span class="val" id="sndrvb-' + m.id + '">' + (m.sound.reverbSend || .35).toFixed(2) + '</span></div>';
-      pb.appendChild(rvcg);
-
-      // Parameter bindings
-      var blbl = document.createElement('div'); blbl.className = 'snd-panel-head'; blbl.innerHTML = '<span>Parameter Bindings</span>';
-      pb.appendChild(blbl);
-      var blist = document.createElement('div'); blist.className = 'snd-binding-list';
-
-      // Special rows first
-      [['__beat__', 'Beat Hit'], ['__activity__', 'Activity Level']].forEach(function (sp) {
-        blist.appendChild(buildBindingRow(m, sp[0], sp[1], null, null));
-      });
-
-      if (spec.params) {
-        spec.params.forEach(function (p) {
-          blist.appendChild(buildBindingRow(m, p[0], p[1], p[2], p[3]));
-        });
+    // ── Play / Stop ──
+    function strudelPlay() {
+      if (!window.strudelReady || !window._strudelEvaluate) {
+        if (window.strudelError) {
+          updateStrudelStatus('Load error — check console', 'err');
+        } else {
+          updateStrudelStatus('Strudel still loading — please wait…', '');
+        }
+        return;
       }
-      pb.appendChild(blist);
+      var code = document.getElementById('strudelCode').value.trim();
+      if (!code) { updateStrudelStatus('Enter a pattern first', 'err'); return; }
 
-      wrap.appendChild(pb);
-      body.appendChild(wrap);
-    }
+      // Auto-visual: append .onTrigger(cvhap) if not already present
+      var evalCode = code;
+      if (strudelAutoVisual && evalCode.indexOf('onTrigger') === -1) {
+        evalCode = evalCode + '\n.onTrigger(cvhap)';
+      }
 
-    function buildBindingRow(m, pid, plabel, pmin, pmax) {
-      var row = document.createElement('div');
-      row.className = 'snd-binding-row';
-      var lbl = document.createElement('span');
-      lbl.className = 'snd-binding-label';
-      lbl.textContent = plabel;
-      var modeChips = document.createElement('div');
-      modeChips.className = 'snd-mode-chips';
-      SND_MODES.forEach(function (mode) {
-        var c = document.createElement('span');
-        c.className = 'snd-mode-chip' + ((m.sound.bindings[pid] || 'off') === mode ? ' active' : '');
-        c.textContent = SND_MODE_LABELS[mode];
-        c.title = mode.charAt(0).toUpperCase() + mode.slice(1);
-        c.onclick = (function (md, row2, inst) {
-          return function () {
-            inst.sound.bindings[pid] = md;
-            row2.querySelectorAll('.snd-mode-chip').forEach(function (x) { x.classList.remove('active'); });
-            this.classList.add('active');
-            // invalidate cached param snapshot so next change fires fresh
-            if (_sndLastParams[inst.id]) delete _sndLastParams[inst.id][pid];
-          };
-        })(mode, modeChips, m);
-        modeChips.appendChild(c);
+      updateStrudelStatus('Starting…', '');
+      window._strudelEvaluate(evalCode).then(function () {
+        strudelOn = true;
+        updateStrudelStatus('Playing', 'running');
+        var btn = document.getElementById('strudelPlayBtn');
+        if (btn) { btn.textContent = '▶ Playing'; btn.classList.add('active'); }
+      }).catch(function (e) {
+        var msg = e && e.message ? e.message : String(e);
+        updateStrudelStatus('Error: ' + msg, 'err');
+        console.error('[Strudel] evaluate error:', e);
       });
-      row.appendChild(lbl);
-      row.appendChild(modeChips);
-      return row;
     }
 
-    function setSndModVol(id, db, lblId) {
-      var m = getModById(id); if (!m || !m.sound) return;
-      m.sound.volume = db / 20;
-      var s = _sndSynths[id];
-      if (s && s.gain) s.gain.gain.rampTo(Math.pow(10, db / 20), 0.05);
-      var el = document.getElementById(lblId); if (el) el.textContent = db;
+    function strudelStop() {
+      if (window._strudelHush) window._strudelHush();
+      strudelOn = false;
+      _strudelBands.vol = _strudelBands.bass = _strudelBands.mid = _strudelBands.hi = 0;
+      beatDetect = 0;
+      var btn = document.getElementById('strudelPlayBtn');
+      if (btn) { btn.textContent = '▶ Play'; btn.classList.remove('active'); }
+      if (window.strudelReady) updateStrudelStatus('Stopped', '');
     }
 
-    function setSndModProp(id, prop, val, lblId) {
-      var m = getModById(id); if (!m || !m.sound) return;
-      m.sound[prop] = val;
-      var el = document.getElementById(lblId); if (el) el.textContent = (prop === 'reverbSend') ? val.toFixed(2) : val;
+    function updateStrudelStatus(msg, cls) {
+      var el = document.getElementById('strudelStatus');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'strudel-status' + (cls ? ' ' + cls : '');
     }
+
+    // ── makeSoundDefaults stub (kept for backward-compat with preset JSON) ──
+    function makeSoundDefaults() { return {}; }
+
   </script>
 </body>
 
