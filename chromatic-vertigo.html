@@ -202,7 +202,7 @@
     .sidebar-drag {
       position: absolute;
       top: 0;
-      right: -5px;
+      left: -5px;
       bottom: 0;
       width: 10px;
       cursor: col-resize;
@@ -1651,16 +1651,515 @@
     #sizeBadge.visible {
       opacity: 1;
     }
+
+    /* ── Three-panel desktop layout ── */
+    /* Fix visual order: left panel | canvas | right sidebar */
+    .canvas-area { order: 2; }
+    .sidebar     { order: 3; }
+
+    .panel-left {
+      order: 1;
+      width: 240px;
+      min-width: 180px;
+      max-width: 380px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, .97);
+      backdrop-filter: blur(10px);
+      padding: 14px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(20, 20, 19, .1);
+      overflow-y: auto;
+      overflow-x: hidden;
+      max-height: calc(100vh - 28px);
+      position: relative;
+    }
+
+    .panel-left h1 {
+      font-family: 'Lora', serif;
+      font-size: 17px;
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+
+    /* Left panel drag handle (on right edge) */
+    .panel-left-drag {
+      position: absolute;
+      top: 0;
+      right: -5px;
+      bottom: 0;
+      width: 10px;
+      cursor: col-resize;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .panel-left-drag-bar {
+      width: 3px;
+      height: 36px;
+      background: var(--lgray);
+      border-radius: 2px;
+      transition: background .15s, height .15s, opacity .2s;
+      opacity: 0;
+    }
+
+    .panel-left:hover .panel-left-drag-bar,
+    .panel-left-drag.dragging .panel-left-drag-bar {
+      opacity: 1;
+    }
+
+    .panel-left-drag:hover .panel-left-drag-bar,
+    .panel-left-drag.dragging .panel-left-drag-bar {
+      background: var(--orange) !important;
+      height: 72px;
+    }
+
+    /* Module bank grid */
+    .bank-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding-bottom: 4px;
+    }
+
+    .bank-card {
+      padding: 6px 8px;
+      border: 1.5px solid var(--lgray);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      background: white;
+      color: var(--dark);
+      transition: all .12s;
+      text-align: center;
+      user-select: none;
+      line-height: 1.3;
+    }
+
+    .bank-card:hover {
+      border-color: var(--orange);
+      background: #fff4f0;
+      color: var(--orange);
+    }
+
+    .bank-card.bank-active {
+      border-color: var(--green);
+      background: #f2f7ec;
+      color: var(--green);
+    }
+
+    /* Randomize & Morph section */
+    .rando-big {
+      width: 100%;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--orange);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .15s;
+      margin-bottom: 6px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .rando-big:hover {
+      background: #c86744;
+      transform: translateY(-1px);
+    }
+
+    .morph-section {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #faf9f7;
+      border: 1px solid var(--lgray);
+      border-radius: 8px;
+    }
+
+    .morph-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .morph-target-chips {
+      display: flex;
+      gap: 4px;
+      margin-top: 3px;
+    }
+
+    .morph-chip {
+      padding: 3px 8px;
+      border: 1.5px solid var(--lgray);
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      background: white;
+      color: var(--mid);
+      transition: all .12s;
+      user-select: none;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .morph-chip.active {
+      border-color: var(--orange);
+      background: #fff4f0;
+      color: var(--orange);
+    }
+
+    .morph-chip:hover:not(.active) {
+      border-color: #c0beb5;
+      color: var(--dark);
+    }
+
+    /* Sidebar right-panel label */
+    .panel-right-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--mid);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 10px;
+    }
+
+    /* Responsive: hide left panel on narrow screens */
+    @media (max-width: 1080px) {
+      .panel-left {
+        display: none;
+      }
+    }
+
+    /* ── Help button ── */
+    .help-btn {
+      background: none;
+      border: 1.5px solid var(--lgray);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--mid);
+      line-height: 1;
+      padding: 0;
+      transition: all .15s;
+      flex-shrink: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .help-btn:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+      background: #fff4f0;
+    }
+
+    /* Header row for panel titles with help button */
+    .panel-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .panel-header-row .panel-right-title {
+      margin-bottom: 0;
+    }
+
+    /* ── Help modal overlay ── */
+    .help-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 20, 19, .55);
+      backdrop-filter: blur(4px);
+      z-index: 9000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .help-overlay.open {
+      display: flex;
+    }
+
+    .help-modal {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 24px 80px rgba(20, 20, 19, .25);
+      width: min(860px, 100%);
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .help-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--lgray);
+      flex-shrink: 0;
+    }
+
+    .help-modal-head h2 {
+      font-family: 'Lora', serif;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--dark);
+      margin: 0;
+    }
+
+    .help-modal-head .version {
+      font-size: 10px;
+      color: var(--mid);
+      margin-left: 8px;
+    }
+
+    .help-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--mid);
+      padding: 4px 8px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: all .15s;
+    }
+
+    .help-close:hover {
+      background: #f0eee9;
+      color: var(--dark);
+    }
+
+    .help-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Tab sidebar */
+    .help-tabs {
+      width: 160px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--lgray);
+      padding: 12px 8px;
+      overflow-y: auto;
+      background: #faf9f7;
+    }
+
+    .help-tab {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      background: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: 'Poppins', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--mid);
+      transition: all .12s;
+      margin-bottom: 2px;
+    }
+
+    .help-tab:hover {
+      background: #ede9e2;
+      color: var(--dark);
+    }
+
+    .help-tab.active {
+      background: #fff4f0;
+      color: var(--orange);
+    }
+
+    .help-tab .tab-icon {
+      margin-right: 6px;
+    }
+
+    /* Content panes */
+    .help-panes {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+    }
+
+    .help-pane {
+      display: none;
+    }
+
+    .help-pane.active {
+      display: block;
+    }
+
+    .help-pane h3 {
+      font-family: 'Lora', serif;
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--dark);
+      margin: 0 0 6px;
+    }
+
+    .help-pane .tagline {
+      font-size: 12px;
+      color: var(--mid);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .help-pane h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--orange);
+      margin: 20px 0 8px;
+    }
+
+    .help-pane h4:first-of-type {
+      margin-top: 0;
+    }
+
+    .help-pane p {
+      font-size: 12px;
+      color: #4a4740;
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+
+    .help-pane ul {
+      font-size: 12px;
+      color: #4a4740;
+      line-height: 1.7;
+      padding-left: 18px;
+      margin-bottom: 10px;
+    }
+
+    .help-pane li {
+      margin-bottom: 4px;
+    }
+
+    /* Key badge */
+    .help-pane kbd {
+      display: inline-block;
+      background: #f0eee9;
+      border: 1px solid #d8d4cc;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-family: monospace;
+      color: var(--dark);
+      white-space: nowrap;
+    }
+
+    /* Info card */
+    .help-card {
+      background: #faf9f7;
+      border: 1px solid var(--lgray);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .help-card-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .help-card p, .help-card ul {
+      margin-bottom: 0;
+    }
+
+    /* Module type grid in help */
+    .help-mod-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .help-mod-chip {
+      background: white;
+      border: 1.5px solid var(--lgray);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    /* Tip box */
+    .help-tip {
+      background: #f0f5ff;
+      border: 1px solid rgba(100, 140, 220, .3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: var(--blue);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .help-tip strong {
+      font-weight: 700;
+    }
   </style>
 
 <body>
   <div class="container">
-    <div class="sidebar">
-      <h1>Chromatic Vertigo</h1>
-      <p class="subtitle">10 chaos modules · audio-reactive · fully controllable</p>
-      <div class="mode-toggle-bar">
-        <button class="mode-btn active" id="modeLayer" onclick="setMode('layer')">⊞ Layer</button>
-        <button class="mode-btn" id="modeChain" onclick="setMode('chain')">⛓ Chain</button>
+    <div class="sidebar" id="panelRight">
+      <div class="panel-header-row">
+        <p class="panel-right-title">Controls</p>
+        <button class="help-btn" onclick="openHelp()" title="Open help &amp; documentation">?</button>
+      </div>
+
+      <!-- RANDOMIZE & MORPH -->
+      <div class="sec" id="randMorphSec">
+        <h3>Randomize &amp; Morph</h3>
+        <button class="rando-big" onclick="randomizeEverything()">🎲 Randomize Everything</button>
+        <div class="g2">
+          <button class="btn sml" onclick="randomizeGlobal()">↺ Global Params</button>
+          <button class="btn sml" onclick="randomizeAllMods()">↺ All Modules</button>
+        </div>
+        <div class="morph-section">
+          <div class="morph-head">
+            <span>Auto-Morph <span id="morphStatus" style="color:var(--orange);font-weight:700"></span></span>
+            <button class="btn sml" id="morphToggleBtn" onclick="toggleAutoMorph()">▶ Start</button>
+          </div>
+          <div class="cg">
+            <label>Speed</label>
+            <div class="srow"><input type="range" id="morphSpeed" min="2" max="60" step="1" value="10" oninput="setMorphSpeed(+this.value)"><span class="val" id="morphSpeed-v">10s</span></div>
+          </div>
+          <div class="cg">
+            <label>Amount</label>
+            <div class="srow"><input type="range" id="morphAmount" min="0.05" max="1" step="0.05" value="0.5" oninput="setMorphAmount(+this.value)"><span class="val" id="morphAmount-v">0.50</span></div>
+          </div>
+          <div class="cg">
+            <label>Target</label>
+            <div class="morph-target-chips">
+              <button class="morph-chip active" id="morphTargetGlobal" onclick="setMorphTarget('global')">Global</button>
+              <button class="morph-chip" id="morphTargetMods" onclick="setMorphTarget('mods')">Modules</button>
+              <button class="morph-chip" id="morphTargetAll" onclick="setMorphTarget('all')">Both</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- AUDIO -->
@@ -1950,21 +2449,6 @@
 
       </div>
 
-      <!-- MODULES (layer mode) -->
-      <div class="sec" id="layerModeSec">
-        <h3>Modules <button class="rnd-btn" onclick="randomizeAllMods()" title="Randomize all module params">🎲</button>
-        </h3>
-        <div class="modules" id="modList"></div>
-      </div>
-
-      <!-- CHAIN MODE -->
-      <div class="sec" id="chainModeSec" style="display:none">
-        <h3>Chain <button class="rnd-btn" onclick="randomizeChain()" title="Randomize chain">🎲</button></h3>
-        <p style="font-size:10px;color:var(--mid);margin-bottom:10px;line-height:1.5">Each link applies the selected transform to the next module's rendered output, using the source's image as the modulator. Modules not in a chain draw normally.</p>
-        <div id="chainList"></div>
-        <button class="btn" onclick="addChainLink()" style="margin-top:4px">+ Add Link</button>
-      </div>
-
       <!-- PRESETS -->
       <div class="sec">
         <h3>Presets</h3>
@@ -2010,6 +2494,40 @@
       </div>
     </div>
 
+    <!-- LEFT PANEL: Module Bank & Active Modules -->
+    <div class="panel-left" id="panelLeft">
+      <div class="panel-header-row" style="margin-bottom:2px">
+        <h1 style="margin-bottom:0">Chromatic Vertigo</h1>
+        <button class="help-btn" onclick="openHelp()" title="Open help &amp; documentation">?</button>
+      </div>
+      <p class="subtitle" style="margin-bottom:10px">Module bank &amp; active layers</p>
+
+      <div class="mode-toggle-bar">
+        <button class="mode-btn active" id="modeLayer" onclick="setMode('layer')">⊞ Layer</button>
+        <button class="mode-btn" id="modeChain" onclick="setMode('chain')">⛓ Chain</button>
+      </div>
+
+      <!-- Module Bank: click to add -->
+      <div class="sec" id="moduleBankSec">
+        <h3>Add Module</h3>
+        <div class="bank-grid" id="bankGrid"></div>
+      </div>
+
+      <!-- Active Modules (layer mode) -->
+      <div class="sec" id="layerModeSec">
+        <h3>Modules <button class="rnd-btn" onclick="randomizeAllMods()" title="Randomize all module params">🎲</button></h3>
+        <div class="modules" id="modList"></div>
+      </div>
+
+      <!-- Chain mode -->
+      <div class="sec" id="chainModeSec" style="display:none">
+        <h3>Chain <button class="rnd-btn" onclick="randomizeChain()" title="Randomize chain">🎲</button></h3>
+        <p style="font-size:10px;color:var(--mid);margin-bottom:10px;line-height:1.5">Each link applies the selected transform to the next module's rendered output. Modules not in a chain draw normally.</p>
+        <div id="chainList"></div>
+        <button class="btn" onclick="addChainLink()" style="margin-top:4px">+ Add Link</button>
+      </div>
+    </div>
+
     <div class="canvas-area">
       <div id="cc">
         <div id="meterOverlay">
@@ -2034,6 +2552,275 @@
 
   <!-- Hidden canvas for Hydra Synth rendering -->
   <canvas id="hydra-canvas" style="display:none;position:absolute;pointer-events:none;"></canvas>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HELP MODAL
+  ═══════════════════════════════════════════════════════ -->
+  <div class="help-overlay" id="helpOverlay" onclick="closeHelpOnBg(event)">
+    <div class="help-modal" role="dialog" aria-modal="true" aria-label="Chromatic Vertigo Help">
+      <div class="help-modal-head">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <h2>Chromatic Vertigo</h2>
+          <span class="version">User Guide</span>
+        </div>
+        <button class="help-close" onclick="closeHelp()" title="Close help">✕</button>
+      </div>
+      <div class="help-body">
+
+        <!-- Tab nav -->
+        <nav class="help-tabs">
+          <button class="help-tab active" onclick="showHelpTab('overview')"><span class="tab-icon">🏠</span>Overview</button>
+          <button class="help-tab" onclick="showHelpTab('layout')"><span class="tab-icon">⊟</span>Layout</button>
+          <button class="help-tab" onclick="showHelpTab('modules')"><span class="tab-icon">⊞</span>Modules</button>
+          <button class="help-tab" onclick="showHelpTab('global')"><span class="tab-icon">🌐</span>Global Controls</button>
+          <button class="help-tab" onclick="showHelpTab('rando')"><span class="tab-icon">🎲</span>Randomize &amp; Morph</button>
+          <button class="help-tab" onclick="showHelpTab('audio')"><span class="tab-icon">🎤</span>Audio</button>
+          <button class="help-tab" onclick="showHelpTab('postfx')"><span class="tab-icon">✨</span>Post FX</button>
+          <button class="help-tab" onclick="showHelpTab('chain')"><span class="tab-icon">⛓</span>Chain Mode</button>
+          <button class="help-tab" onclick="showHelpTab('presets')"><span class="tab-icon">💾</span>Presets</button>
+          <button class="help-tab" onclick="showHelpTab('display')"><span class="tab-icon">🖥</span>Display</button>
+        </nav>
+
+        <!-- Panes -->
+        <div class="help-panes">
+
+          <!-- OVERVIEW -->
+          <div class="help-pane active" id="hp-overview">
+            <h3>Welcome to Chromatic Vertigo</h3>
+            <p class="tagline">A real-time generative visual synthesizer — layer modular visual engines, shape them with audio, and sculpt every parameter in detail.</p>
+            <h4>What it does</h4>
+            <p>Chromatic Vertigo renders a live canvas of layered visual modules — each one an independent generative engine. You control how they blend, colour-shift, react to audio, and mutate over time. Think of it as a modular synthesizer, but for visuals.</p>
+            <h4>Quick start in 30 seconds</h4>
+            <ul>
+              <li>The <strong>left panel</strong> is your <strong>Module Bank</strong> — click any card to add that module to your canvas.</li>
+              <li>In the <strong>Modules</strong> list below, toggle modules on/off and expand them to tweak parameters.</li>
+              <li>Hit <strong>🎲 Randomize Everything</strong> (top of the right panel) to generate a completely fresh look instantly.</li>
+              <li>Enable your <strong>microphone</strong> (Audio Input section) to make visuals react to sound.</li>
+              <li>Try <strong>Auto-Morph</strong> to have parameters continuously evolve on their own.</li>
+              <li><strong>Save a Preset</strong> at any time to store a look you love.</li>
+            </ul>
+            <div class="help-tip"><strong>Tip:</strong> On wide monitors you'll see all three panels at once — Module Bank on the left, canvas in the centre, controls on the right. On narrower windows the module bank collapses; use the Modules section in the right sidebar instead.</div>
+            <h4>Inspiration</h4>
+            <p>Chromatic Vertigo draws on ideas from professional VJ tools: the layered module approach of <em>Resolume</em>, the deep node parameter system of <em>TouchDesigner</em>, and the fast audio-reactive workflow of <em>Synesthesia</em>.</p>
+          </div>
+
+          <!-- LAYOUT -->
+          <div class="help-pane" id="hp-layout">
+            <h3>Interface Layout</h3>
+            <p class="tagline">Three panels fill the screen on wide monitors, giving you module management, your canvas, and global controls all at once.</p>
+            <h4>Left Panel — Module Bank</h4>
+            <div class="help-card">
+              <div class="help-card-title">⊞ Add Module</div>
+              <p>A grid of all available module types. <strong>Click any card to add</strong> a new instance of that module. Cards with a green border are already active in your layer stack.</p>
+            </div>
+            <div class="help-card">
+              <div class="help-card-title">⊞ Modules list</div>
+              <p>The ordered stack of active module instances. Expand a card to edit that module's parameters, blend level, and hue range. Use <strong>Duplicate</strong> to clone, <strong>Remove</strong> to delete, and the toggle in the header to enable/disable without losing settings.</p>
+            </div>
+            <div class="help-card">
+              <div class="help-card-title">⛓ Chain list (Chain Mode)</div>
+              <p>Visible when Chain Mode is active. Each link pipes one module's output through a transform into the next. See the Chain Mode tab for details.</p>
+            </div>
+            <p>The left panel is <strong>drag-resizable</strong> — grab the right edge and drag.</p>
+            <h4>Centre — Canvas</h4>
+            <p>The live rendered output. Drag any of the 8 resize handles (corners and edges) to resize freely. Aspect ratios can be locked in the Display section.</p>
+            <h4>Right Panel — Controls</h4>
+            <p>All global controls: Randomize &amp; Morph, Seed, Global parameters, Post FX, Audio, Sound Engine, Presets, Display, and Actions. Also drag-resizable from the left edge.</p>
+            <div class="help-tip"><strong>Tip:</strong> On screens narrower than 1080 px the Module Bank panel is hidden automatically. All module management moves to the Modules section inside the right panel (scroll down to find it).</div>
+          </div>
+
+          <!-- MODULES -->
+          <div class="help-pane" id="hp-modules">
+            <h3>Modules</h3>
+            <p class="tagline">17 independent visual engines, each with its own parameter set. Stack them in layers, blend them together, and assign different colour ranges to each.</p>
+            <h4>Available module types</h4>
+            <div class="help-mod-grid">
+              <div class="help-mod-chip">🌀 Pinwheels</div>
+              <div class="help-mod-chip">🕸 Fracture Web</div>
+              <div class="help-mod-chip">∞ Lissajous</div>
+              <div class="help-mod-chip">🌀 Spirograph</div>
+              <div class="help-mod-chip">💥 Particle Storm</div>
+              <div class="help-mod-chip">🔯 Kaleidoscope</div>
+              <div class="help-mod-chip">▦ Moire Grid</div>
+              <div class="help-mod-chip">🌊 Plasma Wave</div>
+              <div class="help-mod-chip">💎 Crystal Web</div>
+              <div class="help-mod-chip">🌸 Bloom Petals</div>
+              <div class="help-mod-chip">⚡ Lightning Arc</div>
+              <div class="help-mod-chip">🔵 Pulse Rings</div>
+              <div class="help-mod-chip">🌀 Chaos Tunnel</div>
+              <div class="help-mod-chip">🌿 Noise Field</div>
+              <div class="help-mod-chip">🪐 Orbit Web</div>
+              <div class="help-mod-chip">⬟ Shape Mask</div>
+              <div class="help-mod-chip">💻 Hydra</div>
+            </div>
+            <h4>Per-module controls</h4>
+            <ul>
+              <li><strong>Toggle (circle button)</strong> — enable or disable the module without deleting it.</li>
+              <li><strong>Parameters</strong> — each module exposes sliders specific to its engine (e.g. blade count, particle density, branch depth).</li>
+              <li><strong>Blend</strong> — opacity/blend level for this layer, from 0 (invisible) to 1 (full).</li>
+              <li><strong>Hue Range</strong> — pin this module to a specific colour band, overriding the global hue range.</li>
+              <li><strong>🎲 Randomize</strong> — randomise only this module's parameters.</li>
+              <li><strong>Duplicate</strong> — clone the module with all its current settings.</li>
+              <li><strong>Remove</strong> — delete the instance (at least one must remain).</li>
+            </ul>
+            <h4>Multiple instances</h4>
+            <p>You can add the same module type more than once. Each instance is independent — different parameters, different blend levels. This lets you layer, say, two Pinwheels with different blade counts for a richer composite.</p>
+            <h4>Hydra module</h4>
+            <p>The Hydra module embeds the <em>Hydra Synth</em> live-coding environment. Write Hydra code directly in the text area and click <strong>Run</strong>. Built-in presets let you start quickly. The Hydra output blends with all other modules.</p>
+          </div>
+
+          <!-- GLOBAL CONTROLS -->
+          <div class="help-pane" id="hp-global">
+            <h3>Global Controls</h3>
+            <p class="tagline">These sliders affect the entire canvas — all modules respond to them simultaneously.</p>
+            <h4>Spin Speed</h4>
+            <p>How fast rotational elements turn across all modules. Higher values create a faster, more energetic spin.</p>
+            <h4>Audio Reactivity</h4>
+            <p>Scales how strongly the live audio signal (microphone) modulates the visuals. At 0 there's no audio response; at 5 the visuals react very strongly to every sound. Has no effect if the microphone is disabled.</p>
+            <h4>Hue Speed</h4>
+            <p>The rate at which colours cycle through the spectrum. At 0 colours are static; higher values produce a continuous rainbow roll.</p>
+            <h4>Chaos Amount</h4>
+            <p>Adds noise and irregularity to most module engines. Low values produce clean, geometric patterns; higher values break symmetry and introduce organic turbulence.</p>
+            <h4>Persistence</h4>
+            <p>Controls how much of the previous frame is blended into the new one. Higher values create long, glowing trails; at 0 each frame is fresh with no trails.</p>
+            <h4>Brightness</h4>
+            <p>Overall luminance multiplier. Values below 1 darken the output; above 1 blow it out into brighter glows.</p>
+            <h4>Saturation</h4>
+            <p>Colour intensity. At 0 the output is greyscale; at 1.5 colours are vivid and highly saturated.</p>
+            <h4>Global Hue Range</h4>
+            <p>A range picker that restricts all generated colours to a segment of the colour wheel. Drag the two handles to set the start and end hue. Individual modules can override this with their own hue range.</p>
+            <h4>Seed</h4>
+            <p>The random seed drives the initial state of all procedural elements. Changing the seed (use ‹ / › arrows or the 🎲 button) gives a different structural variation of your current settings. Copy the number to share an exact look.</p>
+          </div>
+
+          <!-- RANDOMIZE & MORPH -->
+          <div class="help-pane" id="hp-rando">
+            <h3>Randomize &amp; Morph</h3>
+            <p class="tagline">Instantly generate new looks or let the app continuously evolve the parameters on its own — like a generative screensaver that never repeats.</p>
+            <h4>Randomize Everything</h4>
+            <p>The big orange button at the top replaces the entire state: new seed, new random global parameters, and a fresh random selection of 2–6 module types — each fully randomised. This is the fastest way to discover new aesthetics.</p>
+            <h4>Quick randomize buttons</h4>
+            <ul>
+              <li><strong>↺ Global Params</strong> — randomise only the global sliders (spin speed, chaos, hue speed, etc.) while keeping your current modules and their parameters.</li>
+              <li><strong>↺ All Modules</strong> — randomise the parameters of every active module while keeping the global settings and module types.</li>
+            </ul>
+            <h4>Auto-Morph</h4>
+            <p>Auto-Morph slowly blends the current parameter values toward randomly chosen targets on a timer, creating a continuously evolving visual that never loops.</p>
+            <ul>
+              <li><strong>▶ Start / ⏸ Stop</strong> — toggle the morph engine. A live indicator appears while active.</li>
+              <li><strong>Speed</strong> — how many seconds between morph steps (2–60 s). Shorter = faster evolution.</li>
+              <li><strong>Amount</strong> — how far each step moves toward the random target (0.05–1.0). Low values (0.1–0.2) create gentle drift; high values (0.8–1.0) cause jarring jumps.</li>
+              <li><strong>Target: Global</strong> — morph only the global parameters (spin speed, chaos, hue speed, etc.).</li>
+              <li><strong>Target: Modules</strong> — morph only each active module's own parameters.</li>
+              <li><strong>Target: Both</strong> — morph both global parameters and all module parameters simultaneously.</li>
+            </ul>
+            <div class="help-tip"><strong>Tip:</strong> For a living wallpaper effect, set Speed to 20 s, Amount to 0.15, Target to Both, then press Start. The visuals will evolve slowly and organically without any interaction.</div>
+          </div>
+
+          <!-- AUDIO -->
+          <div class="help-pane" id="hp-audio">
+            <h3>Audio Input &amp; Routing</h3>
+            <p class="tagline">Feed your microphone (or system audio) into the visual engine. Each frequency band can drive any parameter you choose.</p>
+            <h4>Enabling the microphone</h4>
+            <p>Click <strong>🎤 Enable Microphone</strong> in the Audio Input section. Your browser will ask for permission — you must allow it. The badge changes to <em>🎤 Live</em> once active. The <strong>BEAT</strong> flash lights up on detected transients.</p>
+            <h4>Level meters</h4>
+            <p>Five real-time bars show incoming signal levels: <strong>VOLUME</strong>, <strong>BASS</strong>, <strong>MIDS</strong>, <strong>HIGHS</strong>, and <strong>BEAT</strong>. Use these to verify your signal is coming through.</p>
+            <h4>Audio → Visual routing</h4>
+            <p>The Routing &amp; Mapping panel lets you wire any audio band to any visual parameter. Each routing entry has:</p>
+            <ul>
+              <li><strong>Source</strong> — which band to read (Volume, Bass, Mids, Highs, Beat).</li>
+              <li><strong>Target</strong> — which global parameter to modulate.</li>
+              <li><strong>Strength</strong> — how much the audio signal moves the target parameter.</li>
+            </ul>
+            <p>Built-in routing presets are available, and you can save custom routings as named presets.</p>
+            <h4>Spectrum display</h4>
+            <p>A live FFT spectrum can be overlaid on the canvas (toggle with the 📊 Spectrum button in Display). It shows the full frequency content of the incoming audio in real time.</p>
+            <h4>Sound Engine</h4>
+            <p>Chromatic Vertigo also includes a generative sound engine (powered by Tone.js). Enable it to hear synthesised audio that stays in sync with the visuals. Set BPM, master volume, and reverb amount. Each module can have its own synth voice, scale, and style, creating an audio-visual composition from a single interface.</p>
+          </div>
+
+          <!-- POST FX -->
+          <div class="help-pane" id="hp-postfx">
+            <h3>Post FX</h3>
+            <p class="tagline">Five full-frame effects applied after all modules have rendered. Combine them for cinematic, psychedelic, or glitchy results.</p>
+            <h4>Temporal Echo</h4>
+            <p>Stacks multiple faded copies of recent frames behind the current one. Creates a ghostly, multi-exposure comet-tail effect. Adjust <strong>Count</strong> (number of echoes), <strong>Decay</strong> (how quickly they fade), <strong>Scale Step</strong> (each echo slightly smaller), <strong>Rotation Step</strong> (each echo slightly rotated), and <strong>Hue Drift</strong> (each echo colour-shifted).</p>
+            <h4>Feedback Tunnel</h4>
+            <p>Blends the previous frame back into itself at a slightly zoomed scale, creating an infinite zoom tunnel illusion. Adjust <strong>Amount</strong>, <strong>Zoom</strong>, <strong>Rotation</strong>, and <strong>Hue Drift per frame</strong>.</p>
+            <h4>Chromatic Aberration</h4>
+            <p>Splits the red and blue colour channels and offsets them in opposite directions — mimicking the colour fringing of cheap lenses. The <strong>Glitch</strong> parameters add periodic random displacement for a VHS-style digital glitch.</p>
+            <h4>Mirror / Kaleidoscope</h4>
+            <p>Tiles the frame using rotational symmetry. <strong>Segments</strong> sets the number of mirror slices (2 = simple mirror, 6 = kaleidoscope, 12+ = mandala). Adjust <strong>Rotation Offset</strong>, <strong>Source Zoom</strong>, and <strong>Blend</strong> to mix with the original.</p>
+            <h4>Noise Warp Field</h4>
+            <p>Distorts every pixel using a smoothly-evolving Perlin noise vector field. Creates liquid, flowing, organic distortion. <strong>Warp Amount</strong> controls the pixel displacement; <strong>Noise Scale</strong> controls the spatial frequency of the warp; <strong>Twirl</strong> adds a rotational component; <strong>Audio Reactivity</strong> modulates the warp strength from the audio signal.</p>
+            <div class="help-tip"><strong>Tip:</strong> Combining Temporal Echo + Feedback Tunnel at low amounts with high Persistence produces an infinite tunnel of trails that looks like a black hole.</div>
+          </div>
+
+          <!-- CHAIN MODE -->
+          <div class="help-pane" id="hp-chain">
+            <h3>Chain Mode</h3>
+            <p class="tagline">Instead of independent layers, pipe modules through each other — one module's output becomes the input modulator for the next.</p>
+            <h4>Switching modes</h4>
+            <p>Click <strong>⛓ Chain</strong> in the mode toggle at the top of the left panel. The Modules list is replaced by the Chain editor. Click <strong>⊞ Layer</strong> to return to normal layering.</p>
+            <h4>Chain links</h4>
+            <p>Each link defines:</p>
+            <ul>
+              <li><strong>Source module</strong> — which module's rendered output to use as the modulator image.</li>
+              <li><strong>Target module</strong> — which module receives the modulated input.</li>
+              <li><strong>Transform style</strong> — how the source image modulates the target (e.g. luminance, hue shift, displacement).</li>
+              <li><strong>Strength</strong> — how strongly the modulation is applied.</li>
+            </ul>
+            <p>Modules not referenced in any chain link continue to draw normally as independent layers.</p>
+            <p>Use <strong>+ Add Link</strong> to add chain links and <strong>🎲</strong> to randomise all chain settings.</p>
+            <div class="help-tip"><strong>Tip:</strong> Chain Mode works best with 3–5 modules. Try routing a Plasma Wave as the source modulating a Crystal Web target for fluid, crystal-through-water effects.</div>
+          </div>
+
+          <!-- PRESETS -->
+          <div class="help-pane" id="hp-presets">
+            <h3>Presets</h3>
+            <p class="tagline">Save, recall, export, and import complete snapshots of every parameter — module types, global settings, FX, audio routing, and all.</p>
+            <h4>Saving a preset</h4>
+            <p>Type a name in the text field and click <strong>Save</strong>. The preset is stored in your browser's local storage and appears instantly in the list.</p>
+            <h4>Loading a preset</h4>
+            <p>Click any preset name in the list to load it. The entire app state is replaced including all modules, global parameters, post FX, and audio routing.</p>
+            <h4>Managing presets</h4>
+            <ul>
+              <li><strong>⬇ Export JSON</strong> — download all your presets as a <code>.json</code> file for backup or sharing.</li>
+              <li><strong>⬆ Import JSON</strong> — load a previously exported preset file. Imported presets are merged with any existing ones.</li>
+            </ul>
+            <h4>Reset</h4>
+            <p><strong>↺ Reset All</strong> (in the Actions section) restores all parameters to their factory defaults without touching your saved presets.</p>
+            <h4>Save PNG</h4>
+            <p><strong>💾 Save PNG</strong> (in Actions) downloads a snapshot of the current canvas at its current resolution.</p>
+          </div>
+
+          <!-- DISPLAY -->
+          <div class="help-pane" id="hp-display">
+            <h3>Display &amp; Canvas</h3>
+            <p class="tagline">Control the canvas size, aspect ratio, and what's shown on screen.</p>
+            <h4>Panel width</h4>
+            <p>The <strong>Compact / Normal / Wide</strong> chips quickly snap the right control panel to preset widths. You can also drag the panel's left edge to any width between 220 px and 640 px.</p>
+            <h4>Canvas resizing</h4>
+            <p>Drag any of the 8 handles around the canvas (corners and edges) to resize it freely. A small size badge appears while dragging.</p>
+            <h4>Aspect Lock</h4>
+            <p>Constrain the canvas to a fixed ratio while resizing:</p>
+            <ul>
+              <li><strong>Free</strong> — no constraint, drag any direction.</li>
+              <li><strong>1:1</strong> — square canvas.</li>
+              <li><strong>16:9</strong> — widescreen landscape.</li>
+              <li><strong>4:3</strong> — standard landscape.</li>
+              <li><strong>9:16</strong> — portrait / mobile.</li>
+            </ul>
+            <h4>Fullscreen</h4>
+            <p><strong>⛶ Fullscreen</strong> expands the canvas to fill the entire browser window, hiding all panels. Press <kbd>Esc</kbd> to exit, or click the button again.</p>
+            <h4>Spectrum overlay</h4>
+            <p><strong>📊 Spectrum</strong> toggles a real-time FFT frequency spectrum visualiser in the bottom-left corner of the canvas. Useful for monitoring audio input levels while performing.</p>
+          </div>
+
+        </div><!-- /.help-panes -->
+      </div><!-- /.help-body -->
+    </div><!-- /.help-modal -->
+  </div><!-- /.help-overlay -->
 
   <script>
     // ═══════════════════════════════════════════════════════
@@ -2790,6 +3577,8 @@
         var aovEl = document.getElementById('aov-body-' + m.id);
         if (aovEl) (function (inst) { buildModAovUI(aovEl, inst); })(m);
       });
+      // Refresh module bank highlight state
+      buildBankUI();
     }
 
     function hydraRunCode(id) {
@@ -3074,6 +3863,115 @@
     }
 
     // ═══════════════════════════════════════════════════════
+    // MODULE BANK
+    // ═══════════════════════════════════════════════════════
+
+    function buildBankUI() {
+      var grid = document.getElementById('bankGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      var activeTypes = {};
+      params.moduleList.forEach(function (m) { if (m.on) activeTypes[m.type] = true; });
+      Object.keys(MOD_SPECS).forEach(function (type) {
+        var spec = MOD_SPECS[type];
+        var card = document.createElement('div');
+        card.className = 'bank-card' + (activeTypes[type] ? ' bank-active' : '');
+        card.title = 'Add ' + spec.label;
+        card.textContent = spec.label;
+        card.onclick = (function (t) { return function () { addModInstance(t); }; })(type);
+        grid.appendChild(card);
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // AUTO-MORPH
+    // ═══════════════════════════════════════════════════════
+
+    var autoMorphOn = false;
+    var _morphTimer = null;
+    var morphSpeedVal = 10;
+    var morphAmountVal = 0.5;
+    var morphTargetVal = 'global';
+
+    function setMorphSpeed(v) {
+      morphSpeedVal = v;
+      var el = document.getElementById('morphSpeed-v');
+      if (el) el.textContent = v + 's';
+      if (autoMorphOn) {
+        clearInterval(_morphTimer);
+        _morphTimer = setInterval(doAutoMorph, morphSpeedVal * 1000);
+      }
+    }
+
+    function setMorphAmount(v) {
+      morphAmountVal = v;
+      var el = document.getElementById('morphAmount-v');
+      if (el) el.textContent = v.toFixed(2);
+    }
+
+    function setMorphTarget(t) {
+      morphTargetVal = t;
+      ['global', 'mods', 'all'].forEach(function (x) {
+        var key = x === 'global' ? 'morphTargetGlobal' : x === 'mods' ? 'morphTargetMods' : 'morphTargetAll';
+        var el = document.getElementById(key);
+        if (el) el.classList.toggle('active', x === t);
+      });
+    }
+
+    function toggleAutoMorph() {
+      autoMorphOn = !autoMorphOn;
+      var btn = document.getElementById('morphToggleBtn');
+      var status = document.getElementById('morphStatus');
+      if (autoMorphOn) {
+        _morphTimer = setInterval(doAutoMorph, morphSpeedVal * 1000);
+        if (btn) { btn.textContent = '⏸ Stop'; btn.style.borderColor = 'var(--orange)'; btn.style.color = 'var(--orange)'; }
+        if (status) status.textContent = '● Live';
+      } else {
+        clearInterval(_morphTimer); _morphTimer = null;
+        if (btn) { btn.textContent = '▶ Start'; btn.style.borderColor = ''; btn.style.color = ''; }
+        if (status) status.textContent = '';
+      }
+    }
+
+    function doAutoMorph() {
+      var amt = morphAmountVal;
+      if (amt < 0.01) return;
+      var gRanges = { spinSpeed: [.001, .05], audioReact: [0, 5], hueSpeed: [0, 4], chaos: [0, 1], persist: [0, .9], brightness: [.4, 1.5], saturation: [0, 1.5] };
+      var gSpecs = { spinSpeed: .001, audioReact: .1, hueSpeed: .1, chaos: .01, persist: .01, brightness: .05, saturation: .05 };
+      if (morphTargetVal === 'global' || morphTargetVal === 'all') {
+        Object.keys(gRanges).forEach(function (k) {
+          var r = gRanges[k], step = gSpecs[k];
+          var target = r[0] + Math.random() * (r[1] - r[0]);
+          var cur = params[k];
+          var nv = cur + (target - cur) * amt;
+          nv = Math.round(nv / step) * step;
+          nv = Math.max(r[0], Math.min(r[1], nv));
+          params[k] = nv;
+          var el = document.getElementById(k); if (el) el.value = nv;
+          var vel = document.getElementById(k + '-v'); if (vel) vel.textContent = fmtV(nv);
+        });
+      }
+      if (morphTargetVal === 'mods' || morphTargetVal === 'all') {
+        params.moduleList.forEach(function (m) {
+          if (!m.on) return;
+          var spec = MOD_SPECS[m.type];
+          if (!spec || !spec.params) return;
+          spec.params.forEach(function (p) {
+            var target = p[2] + Math.random() * (p[3] - p[2]);
+            var cur = m[p[0]] !== undefined ? m[p[0]] : p[5];
+            var nv = cur + (target - cur) * amt;
+            nv = Math.round(nv / p[4]) * p[4];
+            nv = Math.max(p[2], Math.min(p[3], nv));
+            m[p[0]] = nv;
+            var pid = m.id + '__' + p[0];
+            var el = document.getElementById(pid); if (el) el.value = nv;
+            var vel = document.getElementById(pid + '-v'); if (vel) vel.textContent = fmtV(nv);
+          });
+        });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
     // STATE
     // ═══════════════════════════════════════════════════════
     var globalHue = 0, fc = 0, pg;
@@ -3214,7 +4112,8 @@
     // P5 SETUP & DRAW
     // ═══════════════════════════════════════════════════════
     function setup() {
-      var sz = min(windowWidth - 330, windowHeight - 28, 820);
+      var totalPanels = (windowWidth >= 1080 ? 580 : 330);
+      var sz = min(windowWidth - totalPanels, windowHeight - 28, 820);
       var cv = createCanvas(sz, sz); cv.parent('cc');
       colorMode(HSB, 360, 100, 100, 100);
       pg = createGraphics(sz, sz); pg.colorMode(HSB, 360, 100, 100, 100);
@@ -5305,7 +6204,8 @@
       });
       document.addEventListener('mousemove', function (e) {
         if (!dragging) return;
-        var nw = Math.max(MIN, Math.min(MAX, startW + (e.clientX - startX)));
+        // Panel is on the right; dragging left increases width
+        var nw = Math.max(MIN, Math.min(MAX, startW - (e.clientX - startX)));
         sidebar.style.width = nw + 'px';
         syncChips(nw);
       });
@@ -5320,6 +6220,85 @@
         syncChips(fw);
       });
     })();
+
+    // ── Resizable left panel ──
+    (function initLeftPanelResize() {
+      var panel = document.getElementById('panelLeft');
+      if (!panel) return;
+      var LS_W = 'cv_leftpanel_w', MIN = 180, MAX = 380;
+
+      var saved = parseInt(localStorage.getItem(LS_W));
+      if (saved && saved >= MIN && saved <= MAX) panel.style.width = saved + 'px';
+
+      var handle = document.createElement('div');
+      handle.className = 'panel-left-drag';
+      var bar = document.createElement('div'); bar.className = 'panel-left-drag-bar';
+      handle.appendChild(bar);
+      panel.appendChild(handle);
+
+      var dragging = false, startX = 0, startW = 0;
+      handle.addEventListener('mousedown', function (e) {
+        dragging = true; startX = e.clientX; startW = panel.offsetWidth;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        var nw = Math.max(MIN, Math.min(MAX, startW + (e.clientX - startX)));
+        panel.style.width = nw + 'px';
+      });
+      document.addEventListener('mouseup', function () {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        localStorage.setItem(LS_W, panel.offsetWidth);
+      });
+    })();
+
+    // Init bank on page load
+    buildBankUI();
+
+    // ═══════════════════════════════════════════════════════
+    // HELP SYSTEM
+    // ═══════════════════════════════════════════════════════
+
+    function openHelp() {
+      document.getElementById('helpOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeHelp() {
+      document.getElementById('helpOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function closeHelpOnBg(e) {
+      if (e.target === document.getElementById('helpOverlay')) closeHelp();
+    }
+
+    function showHelpTab(id) {
+      document.querySelectorAll('.help-tab').forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.help-pane').forEach(function (p) { p.classList.remove('active'); });
+      var pane = document.getElementById('hp-' + id);
+      if (pane) pane.classList.add('active');
+      // Activate matching tab button
+      document.querySelectorAll('.help-tab').forEach(function (t) {
+        if (t.getAttribute('onclick') && t.getAttribute('onclick').indexOf("'" + id + "'") !== -1) {
+          t.classList.add('active');
+        }
+      });
+    }
+
+    // Close help on Escape key
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.getElementById('helpOverlay').classList.contains('open')) {
+        closeHelp();
+      }
+    });
 
     // ═══════════════════════════════════════════════════════
     // STRUDEL INTEGRATION
